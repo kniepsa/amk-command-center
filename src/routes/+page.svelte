@@ -1,20 +1,24 @@
 <script lang="ts">
+	import TodayTab from '$lib/components/TodayTab.svelte';
 	import CRMTab from '$lib/components/CRMTab.svelte';
 	import MorningTab from '$lib/components/MorningTab.svelte';
 	import EveningTab from '$lib/components/EveningTab.svelte';
 	import WeeklyTab from '$lib/components/WeeklyTab.svelte';
 	import MetricsTab from '$lib/components/MetricsTab.svelte';
+	import LearningTab from '$lib/components/LearningTab.svelte';
 
-	type Tab = 'morning' | 'evening' | 'weekly' | 'crm' | 'metrics';
+	type Tab = 'today' | 'morning' | 'evening' | 'weekly' | 'crm' | 'metrics' | 'learning';
 
-	let activeTab = $state<Tab>('crm');
+	let activeTab = $state<Tab>('today');
 
 	const tabs: Array<{ id: Tab; label: string; icon: string }> = [
+		{ id: 'today', label: 'Today', icon: '💬' },
 		{ id: 'morning', label: 'Morning', icon: '🌅' },
 		{ id: 'evening', label: 'Evening', icon: '🌙' },
 		{ id: 'weekly', label: 'Weekly', icon: '📅' },
 		{ id: 'crm', label: 'Personal CRM', icon: '👥' },
-		{ id: 'metrics', label: 'Metrics', icon: '📊' }
+		{ id: 'metrics', label: 'Metrics', icon: '📊' },
+		{ id: 'learning', label: 'Learning', icon: '📚' }
 	];
 </script>
 
@@ -51,7 +55,9 @@
 
 	<!-- Tab Content -->
 	<main class="max-w-7xl mx-auto px-6 py-8">
-		{#if activeTab === 'morning'}
+		{#if activeTab === 'today'}
+			<TodayTab />
+		{:else if activeTab === 'morning'}
 			<MorningTab />
 		{:else if activeTab === 'evening'}
 			<EveningTab />
@@ -61,6 +67,8 @@
 			<CRMTab />
 		{:else if activeTab === 'metrics'}
 			<MetricsTab />
+		{:else if activeTab === 'learning'}
+			<LearningTab />
 		{/if}
 	</main>
 </div>

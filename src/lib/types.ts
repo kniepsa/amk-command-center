@@ -83,3 +83,59 @@ export interface LeadershipChallenge {
   response?: string;
   completed: boolean;
 }
+
+// ============================================================================
+// API Request/Response Types (for Command Center V2 endpoints)
+// ============================================================================
+
+export interface ExtractEntryRequest {
+  date: string; // YYYY-MM-DD format
+  text: string; // Raw voice transcript or typed text
+  existing?: Partial<HabitData>; // Partial entry data to merge with
+}
+
+export interface ExtractedData {
+  sleep?: Partial<HabitData["sleep"]>;
+  energy?: HabitData["energy"];
+  habits?: Partial<HabitData["habits"]>;
+  intentions?: string[];
+  gratitude?: Array<{ thing: string; why: string }>;
+  food?: Array<{
+    time: string;
+    meal: string;
+    portion_grams?: number[];
+    usda_ids?: string[];
+  }>;
+}
+
+export interface ExtractEntryResponse {
+  extracted: ExtractedData;
+  confidence: number; // 0.0 to 1.0
+  suggestions?: string[]; // Helpful suggestions for user
+}
+
+export interface WeeklyPriority {
+  id: string; // e.g., "w06-p1"
+  text: string; // Priority description
+  days_active: number; // How many days this week worked on it
+  total_days: number; // Total days in week (usually 7)
+  progress_percent: number; // days_active / total_days * 100
+  status?: "in_progress" | "completed" | "blocked" | "dropped";
+}
+
+export interface CurrentWeekResponse {
+  week: string;
+  priorities: WeeklyPriority[];
+}
+
+export interface LinkWeeklyRequest {
+  date: string; // YYYY-MM-DD
+  intention: string; // Daily intention text
+  weekly_priority_id: string; // e.g., "w06-p1"
+}
+
+export interface LinkWeeklyResponse {
+  success: boolean;
+  updated_progress: number; // New days_active count
+  message?: string;
+}

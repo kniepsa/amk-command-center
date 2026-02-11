@@ -1,6 +1,5 @@
 import type { Contact, Interaction } from "$lib/types";
 import { INITIAL_CONTACTS, INITIAL_INTERACTIONS } from "$lib/data/initial-data";
-import { createPersistedState } from "$lib/utils/persistence.svelte";
 import { STORAGE_KEYS } from "$lib/utils/constants";
 
 /**
@@ -38,35 +37,70 @@ function isInteractionArray(value: unknown): value is Interaction[] {
 }
 
 /**
- * Persisted reactive state using Svelte 5 runes + localStorage
- * Auto-saves on changes, SSR-safe
+ * Load initial data from localStorage (SSR-safe)
  */
-export const contacts = createPersistedState({
-  key: STORAGE_KEYS.CONTACTS,
-  defaultValue: INITIAL_CONTACTS,
-  validate: isContactArray,
-  onError: (error) => console.error("Contacts persistence error:", error),
-});
+function loadContacts(): Contact[] {
+  if (typeof window === "undefined") return INITIAL_CONTACTS;
 
-export const interactions = createPersistedState({
-  key: STORAGE_KEYS.INTERACTIONS,
-  defaultValue: INITIAL_INTERACTIONS,
-  validate: isInteractionArray,
-  onError: (error) => console.error("Interactions persistence error:", error),
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.CONTACTS);
+    if (!stored) return INITIAL_CONTACTS;
+
+    const parsed = JSON.parse(stored);
+    if (!isContactArray(parsed)) {
+      console.warn("Invalid contacts in localStorage, using defaults");
+      return INITIAL_CONTACTS;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Failed to load contacts:", error);
+    return INITIAL_CONTACTS;
+  }
+}
+
+function loadInteractions(): Interaction[] {
+  if (typeof window === "undefined") return INITIAL_INTERACTIONS;
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.INTERACTIONS);
+    if (!stored) return INITIAL_INTERACTIONS;
+
+    const parsed = JSON.parse(stored);
+    if (!isInteractionArray(parsed)) {
+      console.warn("Invalid interactions in localStorage, using defaults");
+      return INITIAL_INTERACTIONS;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Failed to load interactions:", error);
+    return INITIAL_INTERACTIONS;
+  }
+}
+
+/**
+ * Persisted reactive state using Svelte 5 runes + localStorage
+ * Wrapped in an object to allow safe module-level export
+ * Auto-saves handled by PersistenceManager component
+ */
+export const dataStore = $state({
+  contacts: loadContacts(),
+  interactions: loadInteractions(),
 });
 
 /**
  * Helper functions with explicit return types (best practice)
  */
 export function addContact(contact: Contact): void {
-  contacts.push(contact);
+  dataStore.contacts.push(contact);
 }
 
 export function updateContact(handle: string, updates: Partial<Contact>): void {
-  const index = contacts.findIndex((c) => c.handle === handle);
+  const index = dataStore.contacts.findIndex((c) => c.handle === handle);
   if (index !== -1) {
-    contacts[index] = {
-      ...contacts[index],
+    dataStore.contacts[index] = {
+      ...dataStore.contacts[index],
       ...updates,
       updated: new Date().toISOString(),
     };
@@ -74,20 +108,20 @@ export function updateContact(handle: string, updates: Partial<Contact>): void {
 }
 
 export function deleteContact(handle: string): void {
-  const index = contacts.findIndex((c) => c.handle === handle);
+  const index = dataStore.contacts.findIndex((c) => c.handle === handle);
   if (index !== -1) {
-    contacts.splice(index, 1);
+    dataStore.contacts.splice(index, 1);
   }
 }
 
 export function addInteraction(interaction: Interaction): void {
-  interactions.push(interaction);
+  dataStore.interactions.push(interaction);
 }
 
 export function deleteInteraction(id: string): void {
-  const index = interactions.findIndex((i) => i.id === id);
+  const index = dataStore.interactions.findIndex((i) => i.id === id);
   if (index !== -1) {
-    interactions.splice(index, 1);
+    dataStore.interactions.splice(index, 1);
   }
 }
 
@@ -95,7 +129,7 @@ export function deleteInteraction(id: string): void {
  * Get all interactions for a contact, sorted by date (newest first)
  */
 export function getContactInteractions(handle: string): Interaction[] {
-  return interactions
+  return dataStore.interactions
     .filter((i) => i.contact === handle)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

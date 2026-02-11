@@ -31,20 +31,20 @@
 		{ date: '2026-02-10', hours: 7.9, quality: 'good' }
 	];
 
-	import { contacts, interactions, getDaysSinceLastContact } from '$lib/stores/data.svelte';
+	import { dataStore, getDaysSinceLastContact } from '$lib/stores/data.svelte';
 	import { FOLLOW_UP_THRESHOLD_DAYS } from '$lib/utils/constants';
 
 	// Compute real CRM stats from actual data
 	const crmStats = $derived({
-		totalContacts: contacts.length,
-		totalInteractions: interactions.length,
-		thisWeekInteractions: interactions.filter((i) => {
+		totalContacts: dataStore.contacts.length,
+		totalInteractions: dataStore.interactions.length,
+		thisWeekInteractions: dataStore.interactions.filter((i) => {
 			const iDate = new Date(i.date);
 			const weekAgo = new Date();
 			weekAgo.setDate(weekAgo.getDate() - 7);
 			return iDate >= weekAgo;
 		}).length,
-		needsFollowUp: contacts.filter((c) => {
+		needsFollowUp: dataStore.contacts.filter((c) => {
 			const days = getDaysSinceLastContact(c.handle);
 			return days === null || days > FOLLOW_UP_THRESHOLD_DAYS;
 		}).length

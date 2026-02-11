@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { Contact } from '$lib/types';
 	import {
-		contacts,
-		interactions,
+		dataStore,
 		getContactInteractions,
 		getDaysSinceLastContact
 	} from '$lib/stores/data.svelte';
@@ -15,13 +14,13 @@
 	// Compute all unique tags
 	const allTags = $derived.by(() => {
 		const tagSet = new Set<string>();
-		contacts.forEach((c) => c.tags.forEach((t) => tagSet.add(t)));
+		dataStore.contacts.forEach((c) => c.tags.forEach((t) => tagSet.add(t)));
 		return Array.from(tagSet).sort();
 	});
 
 	// Filter contacts
 	const filteredContacts = $derived.by(() => {
-		let filtered = contacts;
+		let filtered = dataStore.contacts;
 
 		if (searchQuery) {
 			const query = searchQuery.toLowerCase();
@@ -45,7 +44,7 @@
 			});
 		}
 
-		return filtered.sort((a, b) => a.name.localeCompare(b.name));
+		return filtered.toSorted((a, b) => a.name.localeCompare(b.name));
 	});
 </script>
 
@@ -74,8 +73,8 @@
 						{/each}
 					</div>
 				</div>
-				{@const daysSince = getDaysSinceLastContact(selectedContact.handle)}
-				{#if daysSince !== null}
+				{#if getDaysSinceLastContact(selectedContact.handle) !== null}
+					{@const daysSince = getDaysSinceLastContact(selectedContact.handle)}
 					<div
 						class="px-4 py-2 rounded-lg {daysSince > 30
 							? 'bg-red-100 text-red-700'
@@ -97,11 +96,10 @@
 		<div class="bg-white rounded-xl shadow-lg p-8">
 			<h2 class="text-2xl font-bold text-slate-900 mb-6">Interaction Timeline</h2>
 
-			{@const contactInteractions = getContactInteractions(selectedContact.handle)}
-
-			{#if contactInteractions.length === 0}
+			{#if getContactInteractions(selectedContact.handle).length === 0}
 				<p class="text-slate-500 text-center py-8">No interactions recorded yet</p>
 			{:else}
+				{@const contactInteractions = getContactInteractions(selectedContact.handle)}
 				<div class="space-y-4">
 					{#each contactInteractions as interaction}
 						<div
@@ -163,10 +161,10 @@
 						? 'bg-blue-500 text-white'
 						: 'bg-slate-100 text-slate-700 hover:bg-slate-200'}"
 				>
-					All ({contacts.length})
+					All ({dataStore.contacts.length})
 				</button>
 				{#each allTags as tag}
-					{@const count = contacts.filter((c) => c.tags.includes(tag)).length}
+					{@const count = dataStore.contacts.filter((c) => c.tags.includes(tag)).length}
 					<button
 						onclick={() => (selectedTag = tag === selectedTag ? null : tag)}
 						class="px-4 py-2 rounded-lg font-medium transition-colors {selectedTag === tag

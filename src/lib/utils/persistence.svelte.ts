@@ -5,70 +5,17 @@ import { browser } from "$app/environment";
  * Based on best practices from Svelte docs and community patterns
  */
 
-export interface PersistenceOptions<T> {
-  key: string;
-  defaultValue: T;
-  validate?: (value: unknown) => value is T;
-  onError?: (error: Error) => void;
-}
-
 /**
- * Creates a persisted reactive state that auto-syncs with localStorage
- * Only runs in browser environment (SSR-safe)
- *
- * @example
- * const contacts = createPersistedState({
- *   key: 'amk-contacts',
- *   defaultValue: INITIAL_CONTACTS,
- *   validate: (v): v is Contact[] => Array.isArray(v)
- * });
+ * Helper to save state to localStorage (call from component $effect)
  */
-export function createPersistedState<T>(options: PersistenceOptions<T>) {
-  const { key, defaultValue, validate, onError } = options;
+export function saveToLocalStorage<T>(key: string, value: T): void {
+  if (!browser) return;
 
-  // Initialize from localStorage (browser only)
-  function loadFromStorage(): T {
-    if (!browser) return defaultValue;
-
-    try {
-      const stored = localStorage.getItem(key);
-      if (!stored) return defaultValue;
-
-      const parsed = JSON.parse(stored);
-
-      // Validate if validation function provided
-      if (validate && !validate(parsed)) {
-        console.warn(
-          `Invalid data in localStorage for key "${key}", using default`,
-        );
-        return defaultValue;
-      }
-
-      return parsed;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      console.error(`Failed to load from localStorage (key: ${key}):`, err);
-      onError?.(err);
-      return defaultValue;
-    }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to save to localStorage (key: ${key}):`, error);
   }
-
-  const state = $state<T>(loadFromStorage());
-
-  // Auto-save to localStorage on changes (browser only)
-  if (browser) {
-    $effect(() => {
-      try {
-        localStorage.setItem(key, JSON.stringify(state));
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        console.error(`Failed to save to localStorage (key: ${key}):`, err);
-        onError?.(err);
-      }
-    });
-  }
-
-  return state;
 }
 
 /**
