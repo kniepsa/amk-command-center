@@ -5,9 +5,12 @@
 	import WeeklyPrioritiesSidebar from './WeeklyPrioritiesSidebar.svelte';
 	import ExtractionPreview from './ExtractionPreview.svelte';
 	import Button from './shared/Button.svelte';
+	import UrgentItemsSection from './UrgentItemsSection.svelte';
+	import VoiceRecorder from './VoiceRecorder.svelte';
 	import type { WeeklyPriority, ExtractEntryResponse } from '$lib/types';
 	import type { CoachChallenge } from '$lib/types/coach';
 	import { onMount } from 'svelte';
+	import { BRAND } from '$lib/brand';
 
 	// State for chat messages
 	let messages = $state<
@@ -19,10 +22,30 @@
 	let isLoadingPriorities = $state(true);
 	let extractionError = $state<string | null>(null);
 	let showQuickEntry = $state(false); // Toggle for mobile form visibility
+	let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let lastSaved = $state<Date | null>(null);
+	let isSaving = $state(false);
+	let extractionConfidence = $state<number>(1.0);
 
 	// Load weekly priorities on mount
 	onMount(async () => {
 		await loadWeeklyPriorities();
+	});
+
+	// Auto-save with 3s debounce after extraction
+	$effect(() => {
+		// Watch extractedData changes
+		if (Object.keys(extractedData).length > 0) {
+			// Clear existing timeout
+			if (autoSaveTimeout) {
+				clearTimeout(autoSaveTimeout);
+			}
+
+			// Set new timeout for auto-save
+			autoSaveTimeout = setTimeout(async () => {
+				await autoSaveEntry();
+			}, 3000);
+		}
 	});
 
 	// Load weekly priorities from API
@@ -71,6 +94,7 @@
 
 			// Update extracted data
 			extractedData = result.extracted;
+			extractionConfidence = result.confidence || 1.0;
 
 			// Check for coach challenges
 			const coaches = await checkCoachTriggers(content);
@@ -88,18 +112,18 @@
 		} catch (error) {
 			console.error('Extraction error:', error);
 
-			// Provide specific error guidance based on error type
-			let errorMessage = 'I had trouble processing that. ';
+			// Clear, helpful error guidance
+			let errorMessage = 'Couldn\'t process that. ';
 			let recoveryGuidance = '';
 
 			if (error instanceof TypeError || (error as Error).message?.includes('network')) {
-				errorMessage = 'Connection issue detected. ';
-				recoveryGuidance = 'Check your internet connection and try again.';
+				errorMessage = 'Connection failed. ';
+				recoveryGuidance = 'Check your internet and retry.';
 			} else if ((error as Error).message?.includes('timeout')) {
 				errorMessage = 'Request timed out. ';
-				recoveryGuidance = 'Try breaking your message into smaller parts.';
+				recoveryGuidance = 'Try shorter messages.';
 			} else {
-				recoveryGuidance = 'Try rephrasing your message or use the manual entry forms below.';
+				recoveryGuidance = 'Try rephrasing or use manual forms below.';
 			}
 
 			extractionError = errorMessage + recoveryGuidance;
@@ -118,6 +142,12 @@
 	// Handle manual form data changes
 	function handleDataChange(data: ExtractEntryResponse['extracted']) {
 		extractedData = { ...extractedData, ...data };
+	}
+
+	// Handle voice transcription
+	function handleVoiceTranscription(text: string) {
+		// Submit transcribed text as user message
+		handleMessageSubmit(text);
 	}
 
 	// Check for coach triggers
@@ -230,8 +260,39 @@
 		return parts.join('\n');
 	}
 
-	// Handle save to journal
+	// Auto-save entry (debounced)
+	async function autoSaveEntry() {
+		if (isSaving) return;
+		isSaving = true;
+
+		try {
+			await saveEntryToJournal();
+			lastSaved = new Date();
+		} catch (error) {
+			console.error('Auto-save failed:', error);
+			// Silent failure for auto-save
+		} finally {
+			isSaving = false;
+		}
+	}
+
+	// Handle manual save to journal
 	async function handleSaveEntry() {
+		isSaving = true;
+		try {
+			await saveEntryToJournal();
+			alert('Saved');
+			lastSaved = new Date();
+		} catch (error) {
+			console.error('Save failed:', error);
+			alert(`Save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		} finally {
+			isSaving = false;
+		}
+	}
+
+	// Core save logic
+	async function saveEntryToJournal() {
 		try {
 			const today = new Date().toISOString().split('T')[0];
 
@@ -312,24 +373,26 @@
 
 			const result = await response.json();
 			console.log('Entry saved successfully:', result);
-
-			// Show success toast
-			alert(`✅ Entry saved: ${result.filePath}`);
-
-			// Clear chat and extracted data for next entry
-			messages = [];
-			extractedData = {};
+			return result;
 		} catch (error) {
 			console.error('Error saving entry:', error);
-			alert(
-				`❌ Failed to save entry: ${error instanceof Error ? error.message : 'Unknown error'}`
-			);
+			throw error;
 		}
 	}
 </script>
 
 <!-- Quote Header (Full Width) -->
 <QuoteHeader />
+
+<!-- Urgent Items Section -->
+<div class="mb-6">
+	<UrgentItemsSection />
+</div>
+
+<!-- Voice Recorder -->
+<div class="mb-6">
+	<VoiceRecorder onTranscription={handleVoiceTranscription} />
+</div>
 
 <!-- Desktop Layout: Chat-First (>1024px) -->
 <div class="hidden lg:flex gap-6 h-[calc(100vh-320px)]">
@@ -344,16 +407,26 @@
 
 	<!-- Center: Chat Interface (60% width) -->
 	<div class="flex-1 flex flex-col">
+		<!-- Confidence Warning -->
+		{#if extractionConfidence < 0.5}
+			<div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 rounded p-3">
+				<p class="text-sm text-yellow-800">
+					<span class="font-medium">{Math.round(extractionConfidence * 100)}% confidence.</span> Review
+					extracted data carefully.
+				</p>
+			</div>
+		{/if}
+
 		<!-- Error Toast -->
 		{#if extractionError}
-			<div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-				<span class="text-red-500 text-xl">⚠️</span>
-				<div class="flex-1">
-					<p class="text-sm font-medium text-red-800">Extraction Error</p>
-					<p class="text-sm text-red-600 mt-1">{extractionError}</p>
-				</div>
-				<button onclick={() => (extractionError = null)} class="text-red-400 hover:text-red-600">
-					✕
+			<div class="mb-4 bg-red-50 border-l-4 border-red-400 rounded p-3 flex items-start justify-between gap-3">
+				<p class="text-sm text-red-800">{extractionError}</p>
+				<button
+					onclick={() => (extractionError = null)}
+					class="text-red-400 hover:text-red-600 text-lg leading-none"
+					aria-label="Dismiss"
+				>
+					×
 				</button>
 			</div>
 		{/if}
@@ -391,17 +464,14 @@
 		<!-- Chat View (Mobile Secondary) -->
 		<div class="h-[calc(100vh-280px)]">
 			{#if extractionError}
-				<div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-					<span class="text-red-500 text-xl">⚠️</span>
-					<div class="flex-1">
-						<p class="text-sm font-medium text-red-800">Extraction Error</p>
-						<p class="text-sm text-red-600 mt-1">{extractionError}</p>
-					</div>
+				<div class="mb-4 bg-red-50 border-l-4 border-red-400 rounded p-3 flex items-start justify-between gap-3">
+					<p class="text-sm text-red-800">{extractionError}</p>
 					<button
 						onclick={() => (extractionError = null)}
-						class="text-red-400 hover:text-red-600"
+						class="text-red-400 hover:text-red-600 text-lg leading-none"
+						aria-label="Dismiss"
 					>
-						✕
+						×
 					</button>
 				</div>
 			{/if}

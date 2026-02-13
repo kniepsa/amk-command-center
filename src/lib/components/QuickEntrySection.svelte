@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { BRAND } from '$lib/brand';
 	import CollapsibleSection from './shared/CollapsibleSection.svelte';
 	import Input from './shared/Input.svelte';
 	import Button from './shared/Button.svelte';
@@ -98,32 +99,29 @@
 {#if section === 'morning'}
 	<CollapsibleSection title="Morning Entry" icon="🌅" isOpen={false}>
 		{#snippet children()}
-			<div class="space-y-6 mt-6">
+			<div class="space-y-8 mt-6">
 				<!-- Sleep Quality -->
 				<div>
-					<h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-						<span>😴</span>
-						<span>Sleep Quality</span>
-					</h4>
-					<div class="grid grid-cols-2 gap-4 mb-4">
+					<h4 class="text-sm font-medium text-white mb-4">Sleep Quality</h4>
+					<div class="grid grid-cols-2 gap-4 mb-6">
 						<Input type="time" bind:value={bedtime} label="Bedtime" fullWidth />
 						<Input type="time" bind:value={wakeTime} label="Wake Time" fullWidth />
 					</div>
-					<div class="p-3 bg-blue-50 rounded-lg mb-4">
-						<span class="text-sm font-medium text-blue-900">Sleep Duration: {sleepDuration}h</span>
+					<div class="p-4 bg-midnight-800/50 rounded-lg mb-6 border border-white/5">
+						<span class="text-sm text-slate-300">Duration: {sleepDuration}h</span>
 					</div>
 
 					<!-- Sleep Quality Selector -->
-					<div class="space-y-2">
-						<span class="block text-sm font-medium text-slate-700">Quality</span>
-						<div class="flex gap-2">
+					<div class="space-y-3">
+						<span class="block text-sm text-slate-400">Quality</span>
+						<div class="flex gap-3">
 							{#each ['excellent', 'good', 'fair', 'poor'] as quality}
 								<button
 									type="button"
 									onclick={() => (sleepQuality = quality as SleepQuality)}
-									class="flex-1 px-3 py-3 min-h-[44px] rounded-lg border-2 transition-all {sleepQuality === quality
-										? SLEEP_QUALITY_COLORS[quality as SleepQuality]
-										: 'border-slate-200 hover:border-slate-300'}"
+									class="flex-1 px-4 py-3 min-h-[44px] rounded-lg border transition-all {sleepQuality === quality
+										? 'bg-electric-500 border-electric-500 text-white'
+										: 'border-white/10 text-slate-400 hover:border-white/20'}"
 								>
 									<span class="text-sm font-medium capitalize">{quality}</span>
 								</button>
@@ -132,32 +130,29 @@
 					</div>
 
 					<!-- Sleep Checkboxes -->
-					<div class="mt-4 space-y-2">
-						<label class="flex items-center gap-2 min-h-[44px] py-2 cursor-pointer">
-							<input type="checkbox" bind:checked={blueBlockers} class="rounded w-5 h-5" />
-							<span class="text-sm text-slate-700">Blue blockers used</span>
+					<div class="mt-6 space-y-3">
+						<label class="flex items-center gap-3 min-h-[44px] py-2 cursor-pointer">
+							<input type="checkbox" bind:checked={blueBlockers} class="rounded w-5 h-5 border-white/20 bg-midnight-800" />
+							<span class="text-sm text-slate-300">Blue blockers used</span>
 						</label>
-						<label class="flex items-center gap-2 min-h-[44px] py-2 cursor-pointer">
-							<input type="checkbox" bind:checked={screenCurfew} class="rounded w-5 h-5" />
-							<span class="text-sm text-slate-700">Screen curfew followed</span>
+						<label class="flex items-center gap-3 min-h-[44px] py-2 cursor-pointer">
+							<input type="checkbox" bind:checked={screenCurfew} class="rounded w-5 h-5 border-white/20 bg-midnight-800" />
+							<span class="text-sm text-slate-300">Screen curfew followed</span>
 						</label>
 					</div>
 				</div>
 
 				<!-- Energy Level -->
 				<div>
-					<h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-						<span>⚡</span>
-						<span>Energy Level</span>
-					</h4>
-					<div class="grid grid-cols-4 gap-2">
+					<h4 class="text-sm font-medium text-white mb-4">Energy Level</h4>
+					<div class="grid grid-cols-4 gap-3">
 						{#each ['high', 'medium', 'low', 'drained'] as level}
 							<button
 								type="button"
 								onclick={() => (energy = level as EnergyLevel)}
-								class="px-4 py-3 rounded-lg border-2 transition-all {energy === level
-									? ENERGY_COLORS[level as EnergyLevel]
-									: 'border-slate-200 hover:border-slate-300'}"
+								class="px-4 py-3 rounded-lg border transition-all {energy === level
+									? 'bg-electric-500 border-electric-500 text-white'
+									: 'border-white/10 text-slate-400 hover:border-white/20'}"
 							>
 								<span class="text-sm font-medium capitalize">{level}</span>
 							</button>
@@ -167,14 +162,11 @@
 
 				<!-- Intentions -->
 				<div>
-					<h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-						<span>🎯</span>
-						<span>Today's Intentions</span>
-					</h4>
-					<div class="space-y-3">
-						<Input bind:value={intention1} placeholder="Intention 1" fullWidth />
-						<Input bind:value={intention2} placeholder="Intention 2" fullWidth />
-						<Input bind:value={intention3} placeholder="Intention 3" fullWidth />
+					<h4 class="text-sm font-medium text-white mb-4">Today's Intentions</h4>
+					<div class="space-y-4">
+						<Input bind:value={intention1} placeholder="First intention" fullWidth />
+						<Input bind:value={intention2} placeholder="Second intention" fullWidth />
+						<Input bind:value={intention3} placeholder="Third intention" fullWidth />
 					</div>
 				</div>
 			</div>
@@ -183,18 +175,15 @@
 {:else}
 	<CollapsibleSection title="Evening Reflection" icon="🌙" isOpen={false}>
 		{#snippet children()}
-			<div class="space-y-6 mt-6">
+			<div class="space-y-8 mt-6">
 				<!-- Gratitude -->
 				<div>
-					<h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-						<span>🙏</span>
-						<span>Gratitude Journal</span>
-					</h4>
+					<h4 class="text-sm font-medium text-white mb-4">Gratitude Journal</h4>
 					<div class="space-y-4">
 						{#each gratitudeItems as item, index}
-							<div class="border border-slate-200 rounded-lg p-4">
-								<div class="flex items-start justify-between mb-3">
-									<span class="text-sm font-medium text-slate-700">Grateful for #{index + 1}</span>
+							<div class="border border-white/10 rounded-lg p-5 bg-midnight-800/30">
+								<div class="flex items-start justify-between mb-4">
+									<span class="text-sm text-slate-400">#{index + 1}</span>
 									{#if gratitudeItems.length > 2}
 										<button
 											type="button"
@@ -203,7 +192,7 @@
 													removeGratitudeItem(index);
 												}
 											}}
-											class="text-red-500 hover:text-red-700 text-sm px-3 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"
+											class="text-slate-400 hover:text-white text-sm px-3 py-2 min-h-[44px] rounded-lg hover:bg-midnight-700 transition-colors"
 										>
 											Remove
 										</button>
@@ -214,32 +203,29 @@
 									placeholder="What are you grateful for?"
 									fullWidth
 								/>
-								<div class="mt-2">
+								<div class="mt-3">
 									<Input bind:value={item.why} placeholder="Why? (optional)" fullWidth />
 								</div>
 							</div>
 						{/each}
 					</div>
 					<Button variant="secondary" size="sm" onclick={addGratitudeItem} fullWidth>
-						+ Add Another
+						Add Another
 					</Button>
 				</div>
 
 				<!-- Food Log -->
 				<div>
-					<h4 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-						<span>🍽️</span>
-						<span>Food Log</span>
-					</h4>
-					<div class="space-y-3">
+					<h4 class="text-sm font-medium text-white mb-4">Food Log</h4>
+					<div class="space-y-4">
 						{#if foodEntries.length > 0}
 							{#each foodEntries as entry, index}
 								<div
-									class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"
+									class="flex items-center justify-between p-4 bg-midnight-800/30 rounded-lg border border-white/10"
 								>
-									<div class="flex items-center gap-3">
-										<span class="text-sm font-medium text-slate-600">{entry.time}</span>
-										<span class="text-sm text-slate-900">{entry.meal}</span>
+									<div class="flex items-center gap-4">
+										<span class="text-sm text-slate-400">{entry.time}</span>
+										<span class="text-sm text-white">{entry.meal}</span>
 									</div>
 									<button
 										type="button"
@@ -248,18 +234,18 @@
 												removeFoodEntry(index);
 											}
 										}}
-										class="text-red-500 hover:text-red-700 text-sm px-3 py-2 min-h-[44px] rounded hover:bg-red-50 transition-colors"
+										class="text-slate-400 hover:text-white text-sm px-3 py-2 min-h-[44px] rounded-lg hover:bg-midnight-700 transition-colors"
 									>
 										Remove
 									</button>
 								</div>
 							{/each}
 						{:else}
-							<p class="text-sm text-slate-500 text-center py-4">No food entries yet</p>
+							<p class="text-sm text-slate-400 text-center py-6">No food entries yet</p>
 						{/if}
 
 						<!-- Add new entry -->
-						<div class="flex gap-2">
+						<div class="flex gap-3">
 							<Input type="time" bind:value={newMealTime} />
 							<Input bind:value={newMeal} placeholder="What did you eat?" fullWidth />
 							<Button variant="primary" size="md" onclick={addFoodEntry}>Add</Button>

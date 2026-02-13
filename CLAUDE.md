@@ -16,26 +16,57 @@ Personal productivity dashboard with CRM, habit tracking, and metrics visualizat
 ## Architecture
 
 ```
-[User] → [SvelteKit Routes] → [Svelte 5 Stores] → [localStorage]
-                ↓
-         [PersistenceManager]
-                ↓
-         Auto-save on changes
+[User] → [TodayTab: Chat/Forms] → [Extract Entry API] → [Entry Persistence API] → [amk-journal repo]
+              ↓                           ↓
+       [QuickEntrySection]         [Coach System]
+              ↓                           ↓
+    [ExtractionPreview]          [Coach Challenges]
+
+[ZenQuotes API] → [QuoteHeader]
+[Weekly Plans] → [WeeklyPrioritiesSidebar]
+
+[Strategic Intelligence] → [User Text/Decisions] → [4 Analysis Tools]
+                                                          ↓
+                                    [Bias Detector | Contrarian Agent | First Principles | ROI Estimator]
 ```
+
+### Key Services
+
+- **Entry Persistence API** (`/api/entries/[date]`): POST/GET for saving/loading journal entries with YAML frontmatter
+- **Extract Entry API** (`/api/extract-entry`): Claude-powered extraction from voice/text to structured data
+- **Weekly API** (`/api/weekly/current`): Warren Buffett 25/5 priority tracking
+- **Coaches API** (`/api/coaches/config`): AI mentor system configuration
+- **Strategic Intelligence** (`/intelligence`): 4-tool "truth-teller" system - bias detection, contrarian analysis, first principles, ROI estimation (all <10ms, zero dependencies)
 
 ### Key Components
 
-- **PersistenceManager.svelte**: Global component that runs `$effect` to auto-save state to localStorage
-- **dataStore** (data.svelte.ts): Central reactive store using object wrapper pattern
-- **Tabs**: Morning, Evening, Weekly, Personal CRM, Metrics
+- **TodayTab.svelte**: Joe Gebbia Option 3 design - chat-first desktop (60%), form-first mobile with toggle
+- **QuickEntrySection.svelte**: Unified morning/evening forms (collapsible on desktop, expanded on mobile)
+- **ChatInterface.svelte**: Voice-first text input with auto-scroll and keyboard shortcuts
+- **ExtractionPreview.svelte**: Shows extracted data before save, builds trust through transparency
+- **QuoteHeader.svelte**: Daily ZenQuotes inspiration with retry on error
+- **WeeklyPrioritiesSidebar.svelte**: Progress bars for weekly priorities
+- **CoachChallenge.svelte**: AI mentor insights (Bill Campbell, Machiavelli, Peter Drucker, etc.)
+- **Shared Components**: Button, Input, Card, CollapsibleSection (all ≥44px touch targets)
 
 ### Data Flow
 
-1. User interacts with UI (CRM tab, metrics tab, etc.)
-2. Changes update `dataStore.contacts` or `dataStore.interactions`
-3. `PersistenceManager` detects changes via `$effect`
-4. `saveToLocalStorage()` persists to browser storage
-5. On page load, `loadContacts()` and `loadInteractions()` restore from localStorage
+**Voice-First Entry Creation**:
+
+1. User pastes voice transcript or types in ChatInterface
+2. POST to `/api/extract-entry` with text + existing data
+3. Claude extracts: sleep, energy, habits, intentions, gratitude, food, tags, people, frameworks
+4. ExtractionPreview shows extracted data (progressive disclosure)
+5. User reviews, optionally edits in QuickEntrySection forms
+6. Click "Save Entry" → POST to `/api/entries/[date]`
+7. API writes YAML frontmatter + markdown body to amk-journal repo
+8. Success alert, chat cleared for next entry
+
+**Cross-Repository Persistence**:
+
+- Command Center (SvelteKit) → amk-journal (markdown files)
+- API routes use `fs.writeFileSync()` with absolute paths
+- YAML normalization ensures YYYY-MM-DD date format
 
 _Last updated: 2026-02-11_
 
@@ -48,8 +79,19 @@ _Last updated: 2026-02-11_
 - **Svelte 5 state export pattern**: Cannot export directly reassigned `$state` variables. Use object wrapper: `export const dataStore = $state({ contacts: [...], interactions: [...] })`
 - **Svelte 5 array mutations in `$derived`**: `.sort()` mutates array and causes `state_unsafe_mutation` error. Use `.toSorted()` instead (non-mutating)
 - **Svelte 5 `state_unsafe_mutation`**: Reading and writing same state in `$effect` creates circular dependency. Solution: Wrap state in object, access via `dataStore.contacts` instead of direct `contacts` variable
+- **Tailwind JIT dynamic classes**: Template string interpolation breaks JIT compilation (`border-${color}`). Use complete class strings in constants instead
+- **Touch targets mobile minimum**: All interactive elements need ≥44px touch target for mobile usability. Use `min-h-[44px]` + adequate padding
+- **UX error messages**: Generic errors violate trust. Always provide specific recovery guidance ("Check your connection" vs "Failed")
+- **Confirmation dialogs prevent accidents**: Destructive actions (remove items) need `confirm()` dialog - builds user confidence to explore UI
+- **Cross-repository file writes**: SvelteKit API routes can write to external repos. Keep base paths in constants for easy config
+- **Strategic Intelligence heuristic design**: Pattern matching + scoring beats ML for 80% accuracy at <10ms - simple rules catch obvious biases without API calls
+- **Svelte 5 $derived for computed state**: Use `$derived` (simple) or `$derived.by()` (complex) for reactive computations that auto-update when dependencies change
+- **Zero-dependency architecture trade-off**: Speed + offline-first > perfect accuracy. 80/20 rule: catch 80% of biases with 20% effort via simple heuristics
+- **ROI estimation value parsing**: Regex patterns for R25M, €500K, $1.5M + time savings calculation (30min/day = 182h/year × $100/h = $18,200 value)
+- **Contrarian probability scoring**: Base 30% + weak signals (+5% each: could, might) + emotional (+8%: feel, want) + time pressure (+15%: urgent), cap at 85%
+- **Vite dev server module caching**: After installing new dependencies, Vite dev server must be restarted to pick up new imports - HMR won't detect new modules in node_modules
 
-_Last updated: 2026-02-11_
+_Last updated: 2026-02-13_
 
 ---
 

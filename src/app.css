@@ -1,1 +1,79 @@
+/* Google Fonts - Inter */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+
 @import "tailwindcss";
+
+/* Base Styles - Resend Minimalism */
+body {
+  background-color: #0a0a0f;
+  color: white;
+  font-family: "Inter", system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Simple Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #11111a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #242438;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a2a48;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #242438 #11111a;
+}
+
+/* Accessibility Focus Rings */
+*:focus-visible {
+  outline: 2px solid #00d9ff;
+  outline-offset: 2px;
+}
+
+/* Typography Enhancement */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/* Utility: Primary Button */
+.btn-primary {
+  background: #00d9ff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #00b8d4;
+}
+
+.btn-primary:active {
+  background: #009cb8;
+}
+
+/* Utility: Glass Card (Simplified) */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

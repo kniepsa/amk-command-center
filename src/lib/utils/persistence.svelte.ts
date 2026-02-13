@@ -30,6 +30,7 @@ export function clearAllData(): void {
     "amk-morning-reviews",
     "amk-evening-reviews",
     "amk-weekly-plans",
+    "amk-decisions",
   ];
 
   keys.forEach((key) => {
@@ -56,6 +57,7 @@ export function exportData(): string | null {
       "amk-morning-reviews",
       "amk-evening-reviews",
       "amk-weekly-plans",
+      "amk-decisions",
     ].forEach((key) => {
       const item = localStorage.getItem(key);
       if (item) {

@@ -11,7 +11,7 @@ const JOURNAL_BASE = "/Users/amk/Projects/amk-journal/users/amk/entries";
  * POST /api/entries/[date]
  * Saves a daily entry to the journal repository
  *
- * Body: { frontmatter: object, body: string }
+ * Body: { frontmatter: object, body: string, append?: boolean }
  * Returns: { success: boolean, filePath: string }
  */
 export const POST: RequestHandler = async ({ params, request }) => {
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
       );
     }
 
-    const { frontmatter, body } = await request.json();
+    const { frontmatter, body, append = false } = await request.json();
 
     if (!frontmatter || typeof body !== "string") {
       return json(
@@ -57,7 +57,114 @@ export const POST: RequestHandler = async ({ params, request }) => {
       normalizedFrontmatter.schema_version = 2;
     }
 
-    // Build file content
+    // Ensure directory exists
+    if (!existsSync(JOURNAL_BASE)) {
+      mkdirSync(JOURNAL_BASE, { recursive: true });
+    }
+
+    const filePath = join(JOURNAL_BASE, `${date}.md`);
+
+    // APPEND MODE: Add to existing file
+    if (append && existsSync(filePath)) {
+      const { readFileSync } = await import("fs");
+      const { appendFileSync } = await import("fs");
+
+      const existingContent = readFileSync(filePath, "utf8");
+
+      // Check if existing file has frontmatter
+      const hasFrontmatter = existingContent.trim().startsWith("---");
+
+      if (hasFrontmatter) {
+        // Parse existing frontmatter
+        const match = existingContent.match(
+          /^---\n([\s\S]*?)\n---\n([\s\S]*)$/,
+        );
+
+        if (match) {
+          const existingFrontmatter = yaml.load(match[1]) as Record<
+            string,
+            any
+          >;
+          const existingBody = match[2];
+
+          // Merge frontmatter (new values extend existing arrays/objects)
+          const mergedFrontmatter = { ...existingFrontmatter };
+
+          // Merge arrays (deduplicate)
+          const arrayFields = [
+            "intentions",
+            "gratitude",
+            "food",
+            "tags",
+            "people",
+            "frameworks",
+            "contexts",
+          ];
+          arrayFields.forEach((field) => {
+            if (
+              normalizedFrontmatter[field] &&
+              Array.isArray(normalizedFrontmatter[field])
+            ) {
+              const existing = (existingFrontmatter[field] || []) as any[];
+              const newItems = normalizedFrontmatter[field] as any[];
+              mergedFrontmatter[field] = [...existing, ...newItems];
+            }
+          });
+
+          // Merge objects (habits, sleep - keep latest values)
+          const objectFields = ["habits", "sleep"];
+          objectFields.forEach((field) => {
+            if (normalizedFrontmatter[field]) {
+              mergedFrontmatter[field] = {
+                ...(existingFrontmatter[field] || {}),
+                ...normalizedFrontmatter[field],
+              };
+            }
+          });
+
+          // Single values - keep latest
+          if (normalizedFrontmatter.energy) {
+            mergedFrontmatter.energy = normalizedFrontmatter.energy;
+          }
+
+          // Build new content with merged frontmatter
+          const yamlContent = yaml.dump(mergedFrontmatter, {
+            lineWidth: -1,
+            noRefs: true,
+            quotingType: '"',
+            forceQuotes: false,
+          });
+
+          // Add timestamp separator to body
+          const timestamp = new Date().toISOString();
+          const newBody = `\n\n---\n\n**Entry added at ${timestamp}**\n\n${body}`;
+
+          const content = `---\n${yamlContent}---\n${existingBody}${newBody}`;
+          writeFileSync(filePath, content, "utf8");
+
+          return json({
+            success: true,
+            filePath,
+            message: `Entry appended: ${date}`,
+            appended: true,
+          });
+        }
+      }
+
+      // Fallback: If no frontmatter or parsing failed, just append
+      const timestamp = new Date().toISOString();
+      const separator = `\n\n---\n\n**Entry added at ${timestamp}**\n\n`;
+      appendFileSync(filePath, `${separator}${body}`, "utf8");
+
+      return json({
+        success: true,
+        filePath,
+        message: `Entry appended (no frontmatter merge): ${date}`,
+        appended: true,
+      });
+    }
+
+    // OVERWRITE MODE (default): Create new file or replace existing
     const yamlContent = yaml.dump(normalizedFrontmatter, {
       lineWidth: -1, // No line wrapping
       noRefs: true,
@@ -66,14 +173,6 @@ export const POST: RequestHandler = async ({ params, request }) => {
     });
 
     const content = `---\n${yamlContent}---\n${body}`;
-
-    // Ensure directory exists
-    if (!existsSync(JOURNAL_BASE)) {
-      mkdirSync(JOURNAL_BASE, { recursive: true });
-    }
-
-    // Write file
-    const filePath = join(JOURNAL_BASE, `${date}.md`);
     writeFileSync(filePath, content, "utf8");
 
     return json({

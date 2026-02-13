@@ -94,6 +94,12 @@ export interface ExtractEntryRequest {
   existing?: Partial<HabitData>; // Partial entry data to merge with
 }
 
+export interface WorkLogEntry {
+  thread: string;
+  time_spent: string | null;
+  progress: string | null;
+}
+
 export interface ExtractedData {
   sleep?: Partial<HabitData["sleep"]>;
   energy?: HabitData["energy"];
@@ -106,6 +112,13 @@ export interface ExtractedData {
     portion_grams?: number[];
     usda_ids?: string[];
   }>;
+  work_log?: WorkLogEntry[];
+  tags?: string[];
+  people?: string[];
+  frameworks?: string[];
+  contexts?: Array<
+    "calls" | "online" | "office" | "home" | "anywhere" | "waiting"
+  >;
 }
 
 export interface ExtractEntryResponse {

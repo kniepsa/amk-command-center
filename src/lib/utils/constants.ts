@@ -34,6 +34,7 @@ export const STORAGE_KEYS = {
   MORNING_REVIEWS: "amk-morning-reviews",
   EVENING_REVIEWS: "amk-evening-reviews",
   WEEKLY_PLANS: "amk-weekly-plans",
+  DECISIONS: "amk-decisions",
 } as const;
 
 // Energy levels

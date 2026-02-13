@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { BRAND } from '$lib/brand';
 	import { onMount } from 'svelte';
 
 	type Quote = {
@@ -41,30 +42,30 @@
 	});
 </script>
 
-<div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6 shadow-lg mb-6">
-	<div class="flex items-center justify-between mb-4">
-		<h2 class="text-2xl font-bold">📅 {today}</h2>
+<div class="bg-midnight-900 border border-white/10 rounded-lg p-8 mb-6">
+	<div class="flex items-center justify-between mb-6">
+		<h2 class="text-lg font-medium text-white">{today}</h2>
 	</div>
 
 	{#if isLoading}
-		<div class="animate-pulse">
-			<div class="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
-			<div class="h-4 bg-white/30 rounded w-1/2"></div>
+		<div class="animate-pulse space-y-3">
+			<div class="h-4 bg-midnight-800 rounded w-3/4"></div>
+			<div class="h-4 bg-midnight-800 rounded w-1/2"></div>
 		</div>
 	{:else if error}
 		<div class="flex items-center justify-between">
-			<p class="text-white/80 italic text-sm">{error}</p>
+			<p class="text-slate-400 italic text-sm">{error}</p>
 			<button
 				onclick={fetchQuote}
-				class="px-3 py-2 min-h-[44px] bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+				class="px-4 py-3 min-h-[44px] bg-midnight-800 hover:bg-midnight-700 rounded-lg text-sm font-medium transition-colors text-slate-300 border border-white/5"
 			>
 				Retry
 			</button>
 		</div>
 	{:else if quote}
-		<div class="space-y-2">
-			<p class="text-lg italic leading-relaxed">"{quote.q}"</p>
-			<p class="text-white/80 text-sm">— {quote.a}</p>
+		<div class="space-y-4">
+			<p class="text-base italic leading-relaxed text-slate-300">"{quote.q}"</p>
+			<p class="text-slate-400 text-sm">— {quote.a}</p>
 		</div>
 	{/if}
 </div>

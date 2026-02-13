@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { BRAND } from '$lib/brand';
 	import CoachChallenge from './CoachChallenge.svelte';
 	import type { CoachChallenge as CoachChallengeType } from '$lib/types/coach';
 
@@ -49,52 +50,41 @@
 	});
 </script>
 
-<div class="bg-white rounded-xl shadow-lg flex flex-col h-full">
+<div class="bg-midnight-900 rounded-xl border border-glass-border flex flex-col h-full">
 	<!-- Header -->
-	<div class="p-6 border-b border-slate-200">
+	<div class="p-6 border-b border-glass-border">
 		<div class="flex items-center justify-between">
 			<div>
-				<h2 class="text-2xl font-bold text-slate-900">📅 {today}</h2>
-				<p class="text-slate-600 text-sm mt-1">Chat-first daily entry</p>
+				<h2 class="text-xl font-semibold text-white">{today}</h2>
+				<p class="text-white/40 text-sm mt-1">Voice or type to start</p>
 			</div>
-			<button
-				class="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-			>
-				Recent ▾
-			</button>
 		</div>
 	</div>
 
 	<!-- Messages Area -->
-	<div bind:this={chatContainer} class="flex-1 overflow-y-auto p-6 space-y-4">
+	<div bind:this={chatContainer} class="flex-1 overflow-y-auto p-6 space-y-6">
 		{#if messages.length === 0}
-			<div class="text-center py-12">
-				<p class="text-slate-500 text-lg mb-2">No entries yet today</p>
-				<p class="text-slate-400 text-sm">
-					Paste your voice transcript or type naturally to start
-				</p>
+			<div class="text-center py-20">
+				<p class="text-white/40 text-base">Start by recording or typing</p>
 			</div>
 		{:else}
 			{#each messages as message}
 				{#if message.role === 'user'}
 					<div class="flex justify-end">
-						<div class="bg-blue-500 text-white rounded-lg px-4 py-3 max-w-[80%]">
-							<p class="whitespace-pre-wrap">{message.content}</p>
+						<div class="text-white/90 max-w-[80%]">
+							<p class="whitespace-pre-wrap leading-relaxed">{message.content}</p>
 						</div>
 					</div>
 				{:else}
 					<div class="flex justify-start">
-						<div class="bg-slate-100 text-slate-900 rounded-lg px-4 py-3 max-w-[80%]">
-							<div class="flex items-center gap-2 mb-2">
-								<span class="text-sm font-semibold text-blue-600">Claude</span>
-							</div>
-							<p class="whitespace-pre-wrap">{message.content}</p>
+						<div class="border-l-2 border-electric-500 pl-4 max-w-[80%]">
+							<p class="text-white/80 whitespace-pre-wrap leading-relaxed">{message.content}</p>
 						</div>
 					</div>
 
 					<!-- Coach Challenges (if any) -->
 					{#if message.coaches && message.coaches.length > 0}
-						<div class="pl-4">
+						<div class="pl-6">
 							{#each message.coaches as challenge}
 								<CoachChallenge
 									{challenge}
@@ -116,10 +106,10 @@
 			<!-- Loading Indicator -->
 			{#if isLoading}
 				<div class="flex justify-start">
-					<div class="bg-slate-100 text-slate-900 rounded-lg px-4 py-3">
+					<div class="border-l-2 border-electric-500 pl-4">
 						<div class="flex items-center gap-2">
-							<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-							<span class="text-sm text-slate-600">Extracting data...</span>
+							<div class="animate-spin rounded-full h-3 w-3 border-b-2 border-electric-500"></div>
+							<span class="text-sm text-white/40">Extracting...</span>
 						</div>
 					</div>
 				</div>
@@ -128,21 +118,21 @@
 	</div>
 
 	<!-- Input Area -->
-	<div class="p-6 border-t border-slate-200">
+	<div class="p-6 border-t border-glass-border">
 		<div class="flex gap-3">
 			<textarea
 				bind:value={currentInput}
 				onkeydown={handleKeydown}
-				placeholder="Type here or paste voice transcript... (Shift+Enter for new line, Enter to send)"
-				class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+				placeholder="Type your message or use voice"
+				class="flex-1 px-4 py-3 bg-midnight-800 border border-glass-border rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-electric-500 resize-none"
 				rows="3"
 			></textarea>
 			<button
 				onclick={handleSubmit}
 				disabled={!currentInput.trim() || isLoading}
-				class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed font-medium"
+				class="px-6 py-3 bg-electric-500 text-midnight-950 rounded-lg hover:bg-electric-600 transition-colors disabled:bg-white/10 disabled:text-white/30 disabled:cursor-not-allowed font-medium"
 			>
-				{isLoading ? 'Processing...' : 'Send'}
+				Send
 			</button>
 		</div>
 	</div>
