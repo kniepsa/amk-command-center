@@ -3,41 +3,41 @@
 
 @import "tailwindcss";
 
-/* Base Styles - Resend Minimalism */
+/* Base Styles - Resend Minimalism (Light) */
 body {
-  background-color: #0a0a0f;
-  color: white;
+  background-color: #fafafa;
+  color: #525252;
   font-family: "Inter", system-ui, sans-serif;
   overflow-x: hidden;
 }
 
-/* Simple Dark Scrollbar */
+/* Simple Light Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #11111a;
+  background: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #242438;
+  background: #d4d4d4;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a48;
+  background: #a3a3a3;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #242438 #11111a;
+  scrollbar-color: #d4d4d4 #f5f5f5;
 }
 
 /* Accessibility Focus Rings */
 *:focus-visible {
-  outline: 2px solid #00d9ff;
+  outline: 2px solid #0ea5e9;
   outline-offset: 2px;
 }
 
@@ -53,7 +53,7 @@ h6 {
 
 /* Utility: Primary Button */
 .btn-primary {
-  background: #00d9ff;
+  background: #18181b;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -64,16 +64,17 @@ h6 {
 }
 
 .btn-primary:hover {
-  background: #00b8d4;
+  background: #27272a;
 }
 
 .btn-primary:active {
-  background: #009cb8;
+  background: #3f3f46;
 }
 
-/* Utility: Glass Card (Simplified) */
+/* Utility: Light Card (Simplified) */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }

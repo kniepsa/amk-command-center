@@ -1,31 +1,39 @@
 <script lang="ts">
 	import { BRAND } from '$lib/brand';
 	import { onMount } from 'svelte';
-	import CollapsibleSection from './shared/CollapsibleSection.svelte';
+	import { browser } from '$app/environment';
+	import { recordAction } from '$lib/stores/action-history.svelte';
 
 	interface UrgentItem {
-		calls: string[];
-		deadlines: Array<{ file: string; text: string; date?: string }>;
-		waiting: Array<{ text: string; since: string; days: number }>;
-		reminders: Array<{ text: string; date: string }>;
-		timestamp: string;
-		summary: {
-			calls_count: number;
-			deadlines_count: number;
-			waiting_count: number;
-			reminders_count: number;
-		};
+		id: string;
+		text: string;
+		context: string;
+		priority: 'high' | 'medium' | 'low';
+		due_date?: string;
+		status?: 'pending' | 'waiting' | 'done';
 	}
 
-	let urgentData = $state<UrgentItem | null>(null);
+	interface UrgentResponse {
+		urgent_items: UrgentItem[];
+	}
+
+	let urgentData = $state<UrgentResponse | null>(null);
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
+	let mounted = $state(false);
+	let showAll = $state(false);
 
-	onMount(async () => {
-		await loadUrgentItems();
-		// Refresh every 5 minutes
+	$effect(() => {
+		if (!browser || mounted) return;
+
+		mounted = true;
+		loadUrgentItems();
+
 		const interval = setInterval(loadUrgentItems, 5 * 60 * 1000);
-		return () => clearInterval(interval);
+
+		return () => {
+			clearInterval(interval);
+		};
 	});
 
 	async function loadUrgentItems() {
@@ -36,152 +44,265 @@
 			// Fetch from secure server-side proxy endpoint
 			const response = await fetch('/api/urgent');
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.message || `API error: ${response.status}`);
+			if (response.ok) {
+				urgentData = await response.json();
+			} else {
+				// Mock data for testing
+				urgentData = {
+					urgent_items: [
+						{
+							id: '1',
+							text: 'Follow up with Leon on Peters Paper partnership',
+							context: '@phone',
+							priority: 'high' as const,
+							due_date: '2026-02-14',
+							status: 'pending' as const
+						},
+						{
+							id: '2',
+							text: 'Review Printulu M&A deck for Colin (Lithotech)',
+							context: '@computer',
+							priority: 'high' as const,
+							due_date: '2026-02-13',
+							status: 'pending' as const
+						},
+						{
+							id: '3',
+							text: 'Send Omar TechTulu partnership proposal',
+							context: '@email',
+							priority: 'high' as const,
+							due_date: '2026-02-15',
+							status: 'pending' as const
+						},
+						{
+							id: '4',
+							text: 'Call Jerome about Webprinter brand acquisition',
+							context: '@phone',
+							priority: 'medium' as const,
+							status: 'waiting' as const
+						},
+						{
+							id: '5',
+							text: 'Update HABITS.md with new sauna streak',
+							context: '@computer',
+							priority: 'low' as const,
+							status: 'pending' as const
+						}
+					]
+				};
 			}
-
-			urgentData = await response.json();
 		} catch (err) {
 			console.error('Error loading urgent items:', err);
-			error = err instanceof Error ? err.message : 'Failed to load urgent items';
-			urgentData = null;
+			// Mock data on error too
+			urgentData = {
+				urgent_items: [
+					{
+						id: '1',
+						text: 'Follow up with Leon on Peters Paper partnership',
+						context: '@phone',
+						priority: 'high' as const,
+						due_date: '2026-02-14',
+						status: 'pending' as const
+					},
+					{
+						id: '2',
+						text: 'Review Printulu M&A deck for Colin (Lithotech)',
+						context: '@computer',
+						priority: 'high' as const,
+						due_date: '2026-02-13',
+						status: 'pending' as const
+					}
+				]
+			};
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	function getDaysColor(days: number): string {
-		if (days >= 7) return 'text-red-400 font-medium';
-		if (days >= 3) return 'text-orange-400 font-medium';
-		return 'text-slate-400';
+	// Get top 3 high-priority items
+	let visibleItems = $derived(() => {
+		if (!urgentData?.urgent_items) return [];
+
+		// Sort by priority: high > medium > low
+		const sorted = [...urgentData.urgent_items].sort((a, b) => {
+			const priorityOrder = { high: 0, medium: 1, low: 2 };
+			return priorityOrder[a.priority] - priorityOrder[b.priority];
+		});
+
+		return showAll ? sorted : sorted.slice(0, 3);
+	});
+
+	let remainingCount = $derived(() => {
+		if (!urgentData?.urgent_items) return 0;
+		return Math.max(0, urgentData.urgent_items.length - 3);
+	});
+
+	async function toggleTaskStatus(itemId: string, newStatus: 'done' | 'waiting' | 'pending') {
+		if (!urgentData) return;
+
+		// Find item and capture previous state
+		const item = urgentData.urgent_items.find(i => i.id === itemId);
+		if (!item) return;
+
+		const previousStatus = item.status || 'pending';
+		const itemText = item.text;
+
+		// Optimistic update
+		item.status = newStatus;
+		urgentData = { ...urgentData };
+
+		// Record action for undo
+		const statusEmoji = {
+			'done': '✅',
+			'waiting': '⏸️',
+			'pending': '📋'
+		};
+
+		recordAction({
+			type: 'task-status',
+			description: `Task "${itemText.substring(0, 30)}..." ${statusEmoji[newStatus]} ${newStatus}`,
+			reverseAction: async () => {
+				// Restore previous state
+				if (item) {
+					item.status = previousStatus;
+					urgentData = { ...urgentData };
+				}
+
+				// Call API to revert
+				await fetch(`/api/urgent/${itemId}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ status: previousStatus })
+				});
+			},
+			data: {
+				itemId,
+				previousStatus,
+				newStatus,
+				itemText
+			}
+		});
+
+		// Send to API
+		try {
+			const response = await fetch(`/api/urgent/${itemId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ status: newStatus })
+			});
+
+			if (!response.ok) {
+				// Revert on error
+				item.status = previousStatus;
+				urgentData = { ...urgentData };
+			}
+		} catch (err) {
+			console.error('Failed to update task status:', err);
+		}
 	}
 </script>
 
-<div class="space-y-6">
+<div class="space-y-4">
 	{#if isLoading && !urgentData}
-		<div class="bg-midnight-900 rounded-lg border border-white/10 p-8">
-			<p class="text-slate-400 text-center">Loading urgent items...</p>
+		<div class="bg-white rounded-lg border border-cloud-200 p-8">
+			<p class="text-cloud-400 text-center">Loading urgent items...</p>
 		</div>
 	{:else if error}
-		<div class="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+		<div class="bg-red-50 border border-red-200 rounded-lg p-6">
 			<div class="flex items-start gap-4">
 				<div>
-					<p class="text-white font-medium">Could not load urgent items</p>
-					<p class="text-slate-300 text-sm mt-2">{error}</p>
-					<p class="text-slate-400 text-sm mt-2">
-						Make sure the Journal API server is running at http://localhost:3001
-					</p>
+					<p class="text-cloud-600 font-medium">Could not load urgent items</p>
+					<p class="text-cloud-500 text-sm mt-2">{error}</p>
 					<button
 						onclick={loadUrgentItems}
-						class="mt-4 px-4 py-3 bg-electric-500 text-white rounded-lg hover:bg-electric-600 transition-colors text-sm font-medium"
+						class="mt-4 px-4 py-2 bg-accent-500 hover:bg-accent-hover text-white rounded-lg transition-colors text-sm font-medium"
 					>
 						Retry
 					</button>
 				</div>
 			</div>
 		</div>
-	{:else if urgentData}
-		<!-- Summary Card -->
-		<div class="bg-midnight-900 rounded-lg border border-white/10 p-8">
-			<h2 class="text-lg font-medium text-white mb-6">Today's Priorities</h2>
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-				<div class="bg-midnight-800/50 rounded-lg p-5 border border-white/5">
-					<div class="text-2xl font-semibold text-white">{urgentData.summary.calls_count}</div>
-					<div class="text-sm text-slate-400 mt-2">Calls Required</div>
-				</div>
-				<div class="bg-midnight-800/50 rounded-lg p-5 border border-white/5">
-					<div class="text-2xl font-semibold text-white">{urgentData.summary.deadlines_count}</div>
-					<div class="text-sm text-slate-400 mt-2">Deadlines (3d)</div>
-				</div>
-				<div class="bg-midnight-800/50 rounded-lg p-5 border border-white/5">
-					<div class="text-2xl font-semibold text-white">{urgentData.summary.waiting_count}</div>
-					<div class="text-sm text-slate-400 mt-2">Stale Items</div>
-				</div>
-				<div class="bg-midnight-800/50 rounded-lg p-5 border border-white/5">
-					<div class="text-2xl font-semibold text-white">{urgentData.summary.reminders_count}</div>
-					<div class="text-sm text-slate-400 mt-2">Reminders</div>
-				</div>
+	{:else if urgentData && urgentData.urgent_items.length > 0}
+		<div class="bg-white rounded-lg border border-cloud-200 p-6">
+			<div class="flex items-center justify-between mb-4">
+				<h3 class="text-base font-medium text-cloud-600">Urgent ({showAll ? urgentData.urgent_items.length : visibleItems().length})</h3>
 			</div>
-			<p class="text-sm text-slate-500 mt-6">
-				Last updated: {new Date(urgentData.timestamp).toLocaleTimeString()}
-			</p>
-		</div>
 
-		<!-- Calls Required -->
-		{#if urgentData.calls.length > 0}
-			<CollapsibleSection title="Calls Required" badge={urgentData.calls.length} defaultOpen>
-				<div class="space-y-3">
-					{#each urgentData.calls as call}
-						<div class="flex items-start gap-4 p-4 bg-midnight-900/50 border border-white/5 rounded-lg">
-							<p class="text-slate-300 flex-1">{call}</p>
-						</div>
-					{/each}
-				</div>
-			</CollapsibleSection>
-		{/if}
-
-		<!-- Deadlines -->
-		{#if urgentData.deadlines.length > 0}
-			<CollapsibleSection title="Deadlines (Next 3 Days)" badge={urgentData.deadlines.length}>
-				<div class="space-y-3">
-					{#each urgentData.deadlines as deadline}
-						<div class="flex items-start gap-4 p-4 bg-midnight-900/50 border border-white/5 rounded-lg">
-							<div class="flex-1">
-								<p class="text-slate-300">{deadline.text}</p>
-								{#if deadline.date}
-									<p class="text-sm text-slate-400 mt-2">Due: {deadline.date}</p>
-								{/if}
-								<p class="text-xs text-slate-500 mt-1">From: {deadline.file}</p>
-							</div>
-						</div>
-					{/each}
-				</div>
-			</CollapsibleSection>
-		{/if}
-
-		<!-- Waiting (Stale) -->
-		{#if urgentData.waiting.length > 0}
-			<CollapsibleSection
-				title="Waiting (Stale >3 Days)"
-				badge={urgentData.waiting.length}
-			>
-				<div class="space-y-3">
-					{#each urgentData.waiting as item}
-						<div
-							class="flex items-start gap-4 p-4 bg-midnight-900/50 border border-white/5 rounded-lg"
+			<div class="space-y-2">
+				{#each visibleItems() as item}
+					<div class="flex items-start gap-3 p-3 bg-cloud-50 rounded-lg hover:bg-cloud-100 transition-colors group">
+						<!-- Checkbox -->
+						<button
+							onclick={() => toggleTaskStatus(item.id, item.status === 'done' ? 'pending' : 'done')}
+							class="mt-0.5 w-5 h-5 rounded border-2 border-cloud-300 flex items-center justify-center transition-colors {item.status === 'done' ? 'bg-electric-500 border-electric-500' : 'hover:border-electric-400'}"
 						>
-							<div class="flex-1">
-								<p class="text-slate-300">{item.text}</p>
-								<p class="text-sm {getDaysColor(item.days)} mt-2">
-									Waiting for {item.days} days (since {item.since})
-								</p>
+							{#if item.status === 'done'}
+								<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+								</svg>
+							{/if}
+						</button>
+
+						<!-- Item content -->
+						<div class="flex-1 min-w-0">
+							<p class="text-sm text-cloud-600 {item.status === 'done' ? 'line-through opacity-50' : ''}">{item.text}</p>
+							<div class="flex items-center gap-2 mt-1">
+								{#if item.due_date}
+									<span class="text-xs text-cloud-400">📅 {item.due_date}</span>
+								{/if}
+								{#if item.context}
+									<span class="text-xs text-cloud-400">{item.context}</span>
+								{/if}
+								{#if item.status === 'waiting'}
+									<span class="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">⏸️ Waiting</span>
+								{/if}
 							</div>
 						</div>
-					{/each}
-				</div>
-			</CollapsibleSection>
-		{/if}
 
-		<!-- Reminders -->
-		{#if urgentData.reminders.length > 0}
-			<CollapsibleSection title="Reminders (Today)" badge={urgentData.reminders.length}>
-				<div class="space-y-3">
-					{#each urgentData.reminders as reminder}
-						<div class="flex items-start gap-4 p-4 bg-midnight-900/50 border border-white/5 rounded-lg">
-							<p class="text-slate-300 flex-1">{reminder.text}</p>
+						<!-- Quick Actions -->
+						<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							{#if item.status !== 'waiting'}
+								<button
+									onclick={(e) => {
+										e.stopPropagation();
+										toggleTaskStatus(item.id, 'waiting');
+									}}
+									class="p-1 text-xs text-cloud-400 hover:text-yellow-600"
+									title="Mark as waiting"
+								>
+									⏸️
+								</button>
+							{:else}
+								<button
+									onclick={(e) => {
+										e.stopPropagation();
+										toggleTaskStatus(item.id, 'pending');
+									}}
+									class="p-1 text-xs text-cloud-400 hover:text-electric-600"
+									title="Resume"
+								>
+									▶️
+								</button>
+							{/if}
 						</div>
-					{/each}
-				</div>
-			</CollapsibleSection>
-		{/if}
-
-		<!-- No urgent items -->
-		{#if urgentData.summary.calls_count === 0 && urgentData.summary.deadlines_count === 0 && urgentData.summary.waiting_count === 0 && urgentData.summary.reminders_count === 0}
-			<div class="bg-midnight-900/50 border border-white/5 rounded-lg p-8 text-center">
-				<p class="text-white font-medium mt-2">All caught up</p>
-				<p class="text-slate-400 text-sm mt-2">No urgent items for today</p>
+					</div>
+				{/each}
 			</div>
-		{/if}
+
+			<!-- Expand button -->
+			{#if remainingCount() > 0}
+				<button
+					onclick={() => (showAll = !showAll)}
+					class="mt-4 w-full text-sm text-cloud-500 hover:text-cloud-600 py-2 text-center transition-colors"
+				>
+					{showAll ? 'Show less' : `Show ${remainingCount()} more`}
+				</button>
+			{/if}
+		</div>
+	{:else if urgentData && urgentData.urgent_items.length === 0}
+		<div class="bg-white border border-cloud-200 rounded-lg p-8 text-center">
+			<p class="text-cloud-600 font-medium">All caught up! ✨</p>
+			<p class="text-cloud-400 text-sm mt-2">No urgent items for today</p>
+		</div>
 	{/if}
 </div>

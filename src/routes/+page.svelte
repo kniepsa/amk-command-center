@@ -76,18 +76,18 @@
 	}
 </script>
 
-<div class="min-h-screen bg-midnight-950">
+<div class="min-h-screen bg-cloud-50">
 	<!-- Minimalist Header (Resend-style) -->
-	<header class="bg-midnight-900 border-b border-midnight-700">
+	<header class="bg-white border-b border-cloud-200">
 		<div class="max-w-7xl mx-auto px-6 py-4">
 			<div class="flex items-center justify-between">
 				<div>
-					<h1 class="text-xl font-semibold text-white">Nexus AI</h1>
-					<p class="text-sm text-slate-400 mt-0.5">Your AI productivity partner</p>
+					<h1 class="text-xl font-semibold text-cloud-600">Nexus AI</h1>
+					<p class="text-sm text-cloud-500 mt-0.5">Your AI productivity partner</p>
 				</div>
 				<button
 					onclick={handleLogout}
-					class="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors"
+					class="px-4 py-2 text-cloud-500 hover:text-cloud-600 text-sm font-medium transition-colors"
 				>
 					Logout
 				</button>
@@ -96,19 +96,19 @@
 	</header>
 
 	<!-- Minimal Tab Navigation (Resend-style) -->
-	<nav class="bg-midnight-900 border-b border-midnight-700">
+	<nav class="bg-white border-b border-cloud-200">
 		<div class="max-w-7xl mx-auto px-6">
 			<div class="flex gap-6">
 				{#each tabs as tab}
 					<button
 						class="py-3 text-sm font-medium transition-colors relative {activeTab === tab.id
-							? 'text-white'
-							: 'text-slate-400 hover:text-slate-300'}"
+							? 'text-accent-500'
+							: 'text-cloud-500 hover:text-cloud-600'}"
 						onclick={() => (activeTab = tab.id)}
 					>
 						{tab.label}
 						{#if activeTab === tab.id}
-							<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-electric-500"></div>
+							<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500"></div>
 						{/if}
 					</button>
 				{/each}
@@ -118,14 +118,17 @@
 
 	<!-- Tab Content -->
 	<main class="max-w-7xl mx-auto px-6 py-8">
-		{#if activeTab === 'today'}
+		<div class:hidden={activeTab !== 'today'}>
 			<TodayTab />
-		{:else if activeTab === 'crm'}
+		</div>
+		<div class:hidden={activeTab !== 'crm'}>
 			<CRMTab />
-		{:else if activeTab === 'weekly'}
+		</div>
+		<div class:hidden={activeTab !== 'weekly'}>
 			<WeeklyTab />
-		{:else if activeTab === 'strategic'}
+		</div>
+		<div class:hidden={activeTab !== 'strategic'}>
 			<StrategicTab />
-		{/if}
+		</div>
 	</main>
 </div>

@@ -41,7 +41,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     // Parse the Basic auth credentials
     const [scheme, encoded] = auth.split(" ");
 
-    if (scheme !== "Basic") {
+    if (scheme !== "Basic" || !encoded) {
       return new Response("Invalid authentication scheme", {
         status: 401,
         headers: {
@@ -51,7 +51,17 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     // Decode base64 credentials
-    const credentials = atob(encoded || "").split(":");
+    let credentials: string[];
+    try {
+      credentials = atob(encoded).split(":");
+    } catch (error) {
+      return new Response("Invalid credentials format", {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="Command Center - Private Access"',
+        },
+      });
+    }
     const [username, password] = credentials;
 
     // Get password from environment variable

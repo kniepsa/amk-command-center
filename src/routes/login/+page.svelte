@@ -32,22 +32,22 @@
 	}
 </script>
 
-<div class="min-h-screen bg-base-200 flex items-center justify-center">
-	<div class="card w-96 bg-base-100 shadow-xl">
-		<div class="card-body">
-			<h2 class="card-title text-2xl mb-4">Command Center</h2>
-			<p class="text-gray-600 mb-4">Enter password to access your personal dashboard</p>
+<div class="min-h-screen bg-cloud-50 flex items-center justify-center">
+	<div class="w-96 bg-white shadow-lg rounded-lg border border-cloud-200">
+		<div class="p-8">
+			<h2 class="text-2xl font-semibold text-cloud-600 mb-2">Command Center</h2>
+			<p class="text-cloud-500 mb-6">Enter password to access your personal dashboard</p>
 
 			<form onsubmit={handleLogin}>
-				<div class="form-control">
-					<label class="label" for="password">
-						<span class="label-text">Password</span>
+				<div class="mb-4">
+					<label class="block text-sm font-medium text-cloud-600 mb-2" for="password">
+						Password
 					</label>
 					<input
 						id="password"
 						type="password"
 						placeholder="Enter password"
-						class="input input-bordered"
+						class="w-full px-4 py-2 border border-cloud-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
 						bind:value={password}
 						required
 						autofocus
@@ -55,20 +55,22 @@
 				</div>
 
 				{#if error}
-					<div class="alert alert-error mt-4">
-						<span>{error}</span>
+					<div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
+						{error}
 					</div>
 				{/if}
 
-				<div class="card-actions justify-end mt-6">
-					<button type="submit" class="btn btn-primary w-full" disabled={loading}>
-						{loading ? 'Authenticating...' : 'Sign In'}
-					</button>
-				</div>
+				<button
+					type="submit"
+					class="w-full bg-accent-500 hover:bg-accent-hover text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					disabled={loading}
+				>
+					{loading ? 'Authenticating...' : 'Sign In'}
+				</button>
 			</form>
 
-			<div class="text-sm text-gray-500 mt-4">
-				<p>Default password: <code class="bg-base-200 px-2 py-1 rounded">changeme</code></p>
+			<div class="text-sm text-cloud-500 mt-6">
+				<p>Default password: <code class="bg-cloud-100 text-cloud-600 px-2 py-1 rounded">changeme</code></p>
 			</div>
 		</div>
 	</div>

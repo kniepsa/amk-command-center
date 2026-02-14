@@ -176,54 +176,29 @@
 </script>
 
 <div
-	class="bg-glass-surface backdrop-blur-glass border border-glass-border rounded-2xl p-6 shadow-glass transition-all duration-300 hover:border-electric-500/20"
+	class="bg-white backdrop-blur-glass border border-cloud-200 rounded-2xl p-6 shadow-glass transition-all duration-300 hover:border-electric-500/20"
 >
-	<!-- Simple Header -->
-	<div class="flex items-center justify-between mb-6">
-		<div>
-			<h3 class="font-semibold text-white text-lg">Voice Input</h3>
-			<p class="text-sm text-slate-400 mt-1">
-				{#if isRecording}
-					Recording...
-				{:else if isTranscribing}
-					Transcribing...
-				{:else if isExtracting}
-					Extracting...
-				{:else}
-					Speak in German or English
-				{/if}
-			</p>
-		</div>
-
-		{#if isRecording}
-			<div class="flex items-center gap-2 text-red-400">
-				<div class="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-				<span class="text-sm font-mono">{formatTime(recordingTime)}</span>
-			</div>
-		{/if}
-	</div>
-
-	<!-- Simple Recording Button -->
-	<div class="mb-6">
+	<!-- Wispr.ai Style: Green/Red Circle -->
+	<div class="flex flex-col items-center gap-4">
 		{#if !isRecording}
 			<button
 				onclick={startRecording}
 				disabled={isTranscribing || isExtracting}
-				class="w-full px-6 py-3 bg-electric-500 hover:bg-electric-600 disabled:bg-midnight-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				class="w-20 h-20 rounded-full transition-all shadow-lg hover:shadow-xl transform hover:scale-105 {isTranscribing || isExtracting ? 'bg-cloud-300 cursor-wait' : 'bg-green-500 hover:bg-green-600'}"
 			>
-				{#if isTranscribing || isExtracting}
-					Processing...
-				{:else}
-					Start Recording
-				{/if}
 			</button>
+			{#if isTranscribing}
+				<p class="text-sm text-cloud-500">Transcribing...</p>
+			{:else if isExtracting}
+				<p class="text-sm text-cloud-500">Extracting...</p>
+			{/if}
 		{:else}
 			<button
 				onclick={stopRecording}
-				class="w-full px-6 py-3 bg-midnight-700 hover:bg-midnight-600 text-white font-medium rounded-lg transition-colors border border-midnight-600"
+				class="w-20 h-20 bg-red-500 hover:bg-red-600 rounded-full transition-all shadow-lg animate-pulse"
 			>
-				Stop Recording
 			</button>
+			<p class="text-sm text-cloud-500 font-mono">{formatTime(recordingTime)}</p>
 		{/if}
 	</div>
 
@@ -234,7 +209,7 @@
 				<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-electric-500"></div>
 				<div class="flex-1">
 					<p class="text-sm text-electric-500">Transcribing...</p>
-					<p class="text-xs text-slate-400 mt-0.5">Whisper Large V3</p>
+					<p class="text-xs text-cloud-400 mt-0.5">Whisper Large V3</p>
 				</div>
 			</div>
 		</div>
@@ -246,7 +221,7 @@
 				<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
 				<div class="flex-1">
 					<p class="text-sm text-purple-400">Extracting data...</p>
-					<p class="text-xs text-slate-400 mt-0.5">Claude Sonnet 4.5</p>
+					<p class="text-xs text-cloud-400 mt-0.5">Claude Sonnet 4.5</p>
 				</div>
 			</div>
 		</div>
@@ -275,14 +250,36 @@
 				<div class="flex-1">
 					<div class="flex items-center justify-between mb-2">
 						<p class="text-sm font-medium text-green-800">Transcribed</p>
-						{#if confidence < 0.5}
-							<span class="text-xs text-yellow-700 font-medium">
-								{Math.round(confidence * 100)}% confidence
-							</span>
-						{/if}
+						<div class="flex items-center gap-3">
+							{#if confidence < 0.5}
+								<span class="text-xs text-yellow-700 font-medium">
+									{Math.round(confidence * 100)}% confidence
+								</span>
+							{/if}
+							<button
+								onclick={() => {
+									if (onTranscription && transcription) {
+										onTranscription(transcription);
+									}
+								}}
+								class="text-xs text-electric-500 hover:text-electric-600 font-medium"
+							>
+								Try Again
+							</button>
+							<button
+								onclick={() => {
+									transcription = null;
+									error = null;
+								}}
+								class="text-xs text-cloud-400 hover:text-cloud-600"
+								aria-label="Clear"
+							>
+								×
+							</button>
+						</div>
 					</div>
 					<div class="bg-white rounded p-3 border border-green-200">
-						<p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+						<p class="text-sm text-cloud-600 leading-relaxed whitespace-pre-wrap">
 							{transcription}
 						</p>
 					</div>
@@ -293,29 +290,8 @@
 
 	<!-- Missing Data Feedback -->
 	{#if showFeedback && extractedData}
-		<div class="mb-4">
+		<div class="mt-4">
 			<MissingDataFeedback extracted={extractedData} />
-		</div>
-	{/if}
-
-	<!-- Instructions -->
-	{#if !isRecording && !transcription && !error}
-		<div class="bg-slate-50 border border-slate-200 rounded p-4">
-			<p class="text-sm text-slate-600 mb-3">How it works:</p>
-			<ul class="text-sm text-slate-700 space-y-2">
-				<li class="flex items-start gap-2">
-					<span class="text-slate-400">•</span>
-					<span>Speak naturally in German or English</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-slate-400">•</span>
-					<span>Automatically extracts habits, gratitude, tasks, and people</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-slate-400">•</span>
-					<span>Saves to your journal after review</span>
-				</li>
-			</ul>
 		</div>
 	{/if}
 </div>

@@ -36,14 +36,22 @@ export const POST: RequestHandler = async ({ request }) => {
     const suggestions =
       confidence < 0.5 ? generateSuggestions(text, extracted) : [];
 
+    // NEW: Detect uncertain fields (GTD Clarify step)
+    const uncertainFields = detectUncertainty(extracted, text);
+    const needsClarification = uncertainFields.length > 0;
+
     const response: ExtractEntryResponse = {
-      extracted,
+      extracted: {
+        ...extracted,
+        _uncertain: uncertainFields,
+        _needsClarification: needsClarification,
+      } as any,
       confidence,
       suggestions,
     };
 
     console.log(
-      `Extraction completed in ${processingTime}ms, confidence: ${confidence.toFixed(2)}`,
+      `Extraction completed in ${processingTime}ms, confidence: ${confidence.toFixed(2)}, uncertain fields: ${uncertainFields.length}`,
     );
 
     return json(response);
@@ -126,7 +134,16 @@ async function extractWithClaude(
 
   let extractedData;
   try {
-    extractedData = JSON.parse(content.text);
+    // Strip markdown code blocks if present
+    let jsonText = content.text.trim();
+    if (jsonText.startsWith("```")) {
+      // Remove ```json and ``` markers
+      jsonText = jsonText
+        .replace(/^```(?:json)?\n?/, "")
+        .replace(/\n?```$/, "")
+        .trim();
+    }
+    extractedData = JSON.parse(jsonText);
   } catch (parseError) {
     console.error("Failed to parse Claude response:", content.text);
     throw error(500, "Invalid JSON from Claude API");
@@ -354,6 +371,157 @@ function generateSuggestions(
   }
 
   return suggestions;
+}
+
+// ============================================================================
+// Uncertainty Detection (GTD Clarify Step)
+// ============================================================================
+
+interface UncertainField {
+  field: string;
+  value: any;
+  question: string;
+  confidence: number;
+  type?: "choice" | "text";
+  options?: string[];
+}
+
+function detectUncertainty(
+  extracted: ExtractEntryResponse["extracted"],
+  transcript: string,
+): UncertainField[] {
+  const uncertain: UncertainField[] = [];
+  const transcriptLower = transcript.toLowerCase();
+
+  // 1. Low confidence food portions (300g vs 30g)
+  if (extracted.food && Array.isArray(extracted.food)) {
+    extracted.food.forEach((meal, index) => {
+      if (
+        meal.portion_grams &&
+        Array.isArray(meal.portion_grams) &&
+        meal.portion_grams[0]
+      ) {
+        const portionStr = meal.portion_grams[0].toString();
+        // Check if transcript doesn't explicitly mention the exact portion
+        if (!transcriptLower.includes(`${portionStr}g`)) {
+          // Could be 300g or 30g?
+          const alternativeGrams = Math.floor(meal.portion_grams[0] / 10);
+          uncertain.push({
+            field: `food.${index}.portion_grams`,
+            value: meal.portion_grams[0],
+            question: `You mentioned ${meal.meal}. Did you mean ${meal.portion_grams[0]}g or ${alternativeGrams}g?`,
+            confidence: 0.6,
+            type: "choice",
+            options: [`${meal.portion_grams[0]}g`, `${alternativeGrams}g`],
+          });
+        }
+      }
+    });
+  }
+
+  // 2. Ambiguous person mentions (multiple @peter possibilities)
+  if (extracted.people && Array.isArray(extracted.people)) {
+    extracted.people.forEach((person, index) => {
+      // If person doesn't have a suffix (like @peter instead of @peter-lawprint)
+      if (typeof person === "string" && !person.includes("-")) {
+        // Check if this is a common name that could have multiple matches
+        const commonNames = [
+          "peter",
+          "john",
+          "alex",
+          "chris",
+          "michael",
+          "david",
+        ];
+        if (commonNames.includes(person.toLowerCase())) {
+          uncertain.push({
+            field: `people.${index}`,
+            value: person,
+            question: `You mentioned @${person}. Which one: @${person}-lawprint, @${person}-bsc, or someone else?`,
+            confidence: 0.7,
+            type: "choice",
+            options: [
+              `@${person}-lawprint`,
+              `@${person}-bsc`,
+              `@${person} (other)`,
+            ],
+          });
+        }
+      }
+    });
+  }
+
+  // 3. Sleep duration ambiguity (if duration doesn't match bedtime/wake_time)
+  if (extracted.sleep) {
+    const sleep = extracted.sleep;
+    if (
+      sleep.bedtime &&
+      sleep.wake_time &&
+      sleep.duration &&
+      typeof sleep.bedtime === "string" &&
+      typeof sleep.wake_time === "string"
+    ) {
+      // Calculate expected duration from times
+      const bedtimeParts = sleep.bedtime.split(":");
+      const waketimeParts = sleep.wake_time.split(":");
+
+      if (bedtimeParts.length === 2 && waketimeParts.length === 2) {
+        const bedHours = parseInt(bedtimeParts[0]);
+        const bedMins = parseInt(bedtimeParts[1]);
+        const wakeHours = parseInt(waketimeParts[0]);
+        const wakeMins = parseInt(waketimeParts[1]);
+
+        let calculatedDuration = wakeHours - bedHours;
+        if (wakeHours < bedHours) {
+          // Crossed midnight
+          calculatedDuration = 24 - bedHours + wakeHours;
+        }
+
+        // Add minute adjustment
+        calculatedDuration += (wakeMins - bedMins) / 60;
+
+        // If stated duration differs by more than 1 hour
+        if (
+          Math.abs(calculatedDuration - sleep.duration) > 1 &&
+          sleep.duration
+        ) {
+          uncertain.push({
+            field: "sleep.duration",
+            value: sleep.duration,
+            question: `Your sleep times (${sleep.bedtime} - ${sleep.wake_time}) suggest ${Math.round(calculatedDuration)}h, but you said ${sleep.duration}h. Which is correct?`,
+            confidence: 0.7,
+            type: "choice",
+            options: [
+              `${Math.round(calculatedDuration)}h (from times)`,
+              `${sleep.duration}h (as stated)`,
+            ],
+          });
+        }
+      }
+    }
+  }
+
+  // 4. Energy level mentioned but not explicitly stated
+  if (!extracted.energy) {
+    if (
+      transcriptLower.includes("müde") ||
+      transcriptLower.includes("tired") ||
+      transcriptLower.includes("erschöpft") ||
+      transcriptLower.includes("exhausted")
+    ) {
+      uncertain.push({
+        field: "energy",
+        value: "low",
+        question:
+          'You mentioned feeling tired. Would you say your energy is "low" or "drained"?',
+        confidence: 0.6,
+        type: "choice",
+        options: ["low", "drained"],
+      });
+    }
+  }
+
+  return uncertain;
 }
 
 // ============================================================================

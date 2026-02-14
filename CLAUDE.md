@@ -37,6 +37,7 @@ Personal productivity dashboard with CRM, habit tracking, and metrics visualizat
 - **Weekly API** (`/api/weekly/current`): Warren Buffett 25/5 priority tracking
 - **Coaches API** (`/api/coaches/config`): AI mentor system configuration
 - **Strategic Intelligence** (`/intelligence`): 4-tool "truth-teller" system - bias detection, contrarian analysis, first principles, ROI estimation (all <10ms, zero dependencies)
+- **Brand System** (`/src/lib/brand/index.ts`): Centralized "Nexus AI" brand identity - personality, voice/tone, copy constants, messaging patterns
 
 ### Key Components
 
@@ -90,6 +91,14 @@ _Last updated: 2026-02-11_
 - **ROI estimation value parsing**: Regex patterns for R25M, €500K, $1.5M + time savings calculation (30min/day = 182h/year × $100/h = $18,200 value)
 - **Contrarian probability scoring**: Base 30% + weak signals (+5% each: could, might) + emotional (+8%: feel, want) + time pressure (+15%: urgent), cap at 85%
 - **Vite dev server module caching**: After installing new dependencies, Vite dev server must be restarted to pick up new imports - HMR won't detect new modules in node_modules
+- **GitHub Push Protection on API keys**: GitHub blocks pushes containing secrets (API keys). Redact keys in documentation before committing (use `r8_your_key_here` placeholders). Fix: Edit file, amend commit (`git commit --amend --no-edit`), force push
+- **Resend-style minimalism**: No gradients, no complex animations (except loading spinners), no decorative elements. Use border-left-4 for alerts, generous spacing, clean typography. Dark-first with midnight-900/800/700 palette
+- **Brand identity without over-designing**: Centralize brand constants in `/src/lib/brand/index.ts`. Apply personality through copy/messaging, not flashy visuals. "Nexus AI" subtle branding > robotic AI indicators
+- **Team agents for parallel execution**: Launch 7+ agents simultaneously with strict design rules. All agents must complete before verification. Use for large-scale refactors (UI consistency, branding updates)
+- **Playwright MCP date navigation closure bug (2026-02-13)**: Event handlers defined inside `$effect` capture stale state values. Moving navigation handlers OUTSIDE `$effect` fixes closure issue. Use direct prop callbacks (`onPrevious`, `onNext`) instead of CustomEvent dispatch for reliability.
+- **Claude API JSON markdown wrapping (2026-02-13)**: Claude Sonnet 4.5 sometimes returns JSON wrapped in `json ... ` code blocks. Must strip markdown before `JSON.parse()`. Regex: `jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()`.
+- **Multi-agent expert reviews before shipping (2026-02-13)**: Single-perspective testing misses critical issues. Run 4+ parallel expert agents (Joe Gebbia UX, Nir Eyal Hook Model, GTD productivity, Voice-First) to catch P0 blockers. Example findings: habits navigate to wrong tabs, API fails silently, no keyboard shortcuts, 50 min/day wasted.
+- **Voice-First requires keyboard shortcuts (2026-02-13)**: Green button clicks fail while driving. MUST add Cmd+Shift+V shortcut + TTS audio confirmations for hands-free usage. Voice coverage target: 80%+ (not 15%). Test: Can entrepreneur use while driving?
 
 _Last updated: 2026-02-13_
 

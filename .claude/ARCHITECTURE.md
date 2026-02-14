@@ -50,6 +50,8 @@
 - **Parsing**: gray-matter (frontmatter), js-yaml (YAML serialization)
 - **Server**: Vite 6.x dev server
 - **Auth**: Session cookies (HttpOnly, SameSite=Lax)
+- **AI Integration**: Claude Sonnet 4.5 API for entry extraction
+- **Learning System**: 5 courses (Sales, Brand Building, Storytelling, Fundraising, Vibe Coding) with 30-day curricula
 
 ## Architecture Notes
 
@@ -57,6 +59,7 @@
 - **Read-only currently**: APIs read journal, write functionality pending
 - **Dual ports**: Dev server runs on both 5173 and 5176 (Vite default + mirror)
 - **Legacy peer deps**: All npm installs use `--legacy-peer-deps` flag to avoid conflicts
+- **Multi-agent reviews**: Use 4+ parallel expert agents (Joe Gebbia, Nir Eyal, GTD, Voice-First) before major releases
 
 ---
 

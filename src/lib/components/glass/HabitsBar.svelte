@@ -1,18 +1,56 @@
 <script>
   /**
    * HabitsBar - Clean horizontal habits bar (Resend minimalism)
-   * Features: Confetti on completion
+   * Features: Confetti on completion + Micro-rewards (60% trigger rate)
    */
+  import { showToast } from '$lib/utils/toast';
+  import { speak } from '$lib/utils/tts';
+
   let { habits = $bindable([]), onToggle = () => {} } = $props();
+
+  // Micro-reward system (Nir Eyal Hook Model)
+  const celebrationEmojis = ['🎉', '🔥', '⚡', '💪', '🌟'];
+  const celebrationPhrases = ['Boom!', 'Nice!', 'Crushing it!', 'On fire!', 'Beast mode!'];
 
   function toggleHabit(habitId) {
     const habit = habits.find((h) => h.id === habitId);
     if (habit) {
       habit.completed = !habit.completed;
       if (habit.completed) {
-        triggerConfetti();
+        triggerMicroReward();
       }
       onToggle(habitId, habit.completed);
+    }
+  }
+
+  /**
+   * Trigger micro-reward with 60% probability (variable reward = dopamine hit)
+   * Random timing creates unpredictability = stronger habit formation
+   */
+  function triggerMicroReward() {
+    // 60% trigger rate (NOT 100% - unpredictability is key)
+    if (Math.random() < 0.6) {
+      const emoji = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
+      const phrase = celebrationPhrases[Math.floor(Math.random() * celebrationPhrases.length)];
+
+      // Variable timing (sometimes instant, sometimes delayed)
+      const delay = Math.random() < 0.7 ? 0 : 1000;
+
+      setTimeout(() => {
+        // Visual toast
+        showToast(`${emoji} ${phrase}`, 'success');
+
+        // Audio feedback (if TTS available)
+        if (typeof speak === 'function') {
+          speak(phrase, 'high');
+        }
+
+        // Confetti animation
+        triggerConfetti();
+      }, delay);
+    } else {
+      // Silent success (no celebration)
+      // This unpredictability makes the rewards more powerful
     }
   }
 

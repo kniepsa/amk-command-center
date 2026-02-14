@@ -7,9 +7,14 @@
 	import Button from './shared/Button.svelte';
 	import UrgentItemsSection from './UrgentItemsSection.svelte';
 	import VoiceRecorder from './VoiceRecorder.svelte';
+	import MorningRitual from './MorningRitual.svelte';
+	import HabitStreaks from './HabitStreaks.svelte';
+	import DailyCoachChallenges from './DailyCoachChallenges.svelte';
+	import ClarifyModal from './ClarifyModal.svelte';
 	import type { WeeklyPriority, ExtractEntryResponse } from '$lib/types';
 	import type { CoachChallenge } from '$lib/types/coach';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { BRAND } from '$lib/brand';
 
 	// State for chat messages
@@ -26,15 +31,141 @@
 	let lastSaved = $state<Date | null>(null);
 	let isSaving = $state(false);
 	let extractionConfidence = $state<number>(1.0);
+	let prioritiesMounted = $state(false);
+	let showVoiceModal = $state(false);
+	let morningRitualComplete = $state(false);
+	let currentDate = $state(new Date());
+	let showClarifyModal = $state(false);
+	let pendingExtractedData = $state<ExtractEntryResponse['extracted'] | null>(null);
 
-	// Load weekly priorities on mount
-	onMount(async () => {
-		await loadWeeklyPriorities();
+	// Day navigation functions
+	function goToPreviousDay() {
+		const newDate = new Date(currentDate);
+		newDate.setDate(newDate.getDate() - 1);
+		currentDate = newDate;
+		loadEntryForDate(currentDate);
+	}
+
+	function goToNextDay() {
+		const newDate = new Date(currentDate);
+		newDate.setDate(newDate.getDate() + 1);
+		currentDate = newDate;
+		loadEntryForDate(currentDate);
+	}
+
+	// Load weekly priorities and journal entry on mount
+	$effect(() => {
+		if (!browser || prioritiesMounted) return;
+
+		prioritiesMounted = true;
+		loadWeeklyPriorities();
+		loadTodayEntry();
 	});
 
+	// Load today's journal entry
+	async function loadTodayEntry() {
+		await loadEntryForDate(currentDate);
+	}
+
+	// Load journal entry for specific date
+	async function loadEntryForDate(date: Date) {
+		try {
+			const dateStr = date.toISOString().split('T')[0];
+			const response = await fetch(`/api/entries/${dateStr}`);
+
+			if (response.ok) {
+				const data = await response.json();
+
+				// Load extracted data from frontmatter
+				if (data.frontmatter) {
+					extractedData = {
+						sleep: data.frontmatter.sleep,
+						energy: data.frontmatter.energy,
+						habits: data.frontmatter.habits,
+						intentions: data.frontmatter.intentions,
+						gratitude: data.frontmatter.gratitude,
+						food: data.frontmatter.food,
+						tags: data.frontmatter.tags,
+						people: data.frontmatter.people,
+						frameworks: data.frontmatter.frameworks,
+						contexts: data.frontmatter.contexts
+					};
+				}
+
+				// Parse body to reconstruct chat messages
+				if (data.body) {
+					const parsedMessages = parseJournalBody(data.body);
+					messages = parsedMessages;
+				}
+			} else {
+				// No entry for this date - clear data
+				extractedData = {};
+				messages = [];
+			}
+		} catch (error) {
+			console.error('Error loading entry:', error);
+			// Clear on error
+			extractedData = {};
+			messages = [];
+		}
+	}
+
+	// Parse journal markdown body back into chat messages
+	function parseJournalBody(body: string): typeof messages {
+		const msgs: typeof messages = [];
+		const sections = body.split(/(?=^## )/gm);
+
+		for (const section of sections) {
+			const trimmed = section.trim();
+			if (!trimmed) continue;
+
+			// User entry
+			if (trimmed.startsWith('## 📝 Entry')) {
+				const content = trimmed.replace('## 📝 Entry', '').trim();
+				if (content) {
+					msgs.push({ role: 'user', content });
+				}
+			}
+			// Coach insights
+			else if (trimmed.startsWith('## 🎯 Coach Insights')) {
+				// Extract coach challenges
+				const coaches: CoachChallenge[] = [];
+				const coachSections = trimmed.split(/(?=^### )/gm).slice(1);
+
+				for (const coachSection of coachSections) {
+					const match = coachSection.match(/### (.) (.+?)\n\n(.+)/s);
+					if (match) {
+						coaches.push({
+							coach_id: match[2].toLowerCase().replace(/\s+/g, '-'),
+							coach_name: match[2],
+							icon: match[1],
+							message: match[3].trim(),
+							confidence: 0.8
+						});
+					}
+				}
+
+				if (coaches.length > 0) {
+					msgs.push({
+						role: 'assistant',
+						content: 'Coach insights available',
+						coaches
+					});
+				}
+			}
+		}
+
+		return msgs;
+	}
+
 	// Auto-save with 3s debounce after extraction
+	// Track a serialized version to avoid triggering on reference changes
+	let extractedDataJson = $derived(JSON.stringify(extractedData));
+
 	$effect(() => {
-		// Watch extractedData changes
+		// Only trigger when actual data changes (not just reference)
+		const _ = extractedDataJson; // Track the derived value
+
 		if (Object.keys(extractedData).length > 0) {
 			// Clear existing timeout
 			if (autoSaveTimeout) {
@@ -46,6 +177,13 @@
 				await autoSaveEntry();
 			}, 3000);
 		}
+
+		// Cleanup function
+		return () => {
+			if (autoSaveTimeout) {
+				clearTimeout(autoSaveTimeout);
+			}
+		};
 	});
 
 	// Load weekly priorities from API
@@ -68,9 +206,6 @@
 
 	// Handle user message submission
 	async function handleMessageSubmit(content: string) {
-		// Add user message
-		messages = [...messages, { role: 'user', content }];
-
 		// Call extraction API
 		isExtracting = true;
 		extractionError = null;
@@ -92,17 +227,30 @@
 
 			const result: ExtractEntryResponse = await response.json();
 
-			// Update extracted data
-			extractedData = result.extracted;
+			// Store extraction confidence
 			extractionConfidence = result.confidence || 1.0;
+
+			// NEW: Check if clarification is needed (GTD Clarify step)
+			if ((result.extracted as any)._needsClarification) {
+				// Show clarify modal BEFORE committing to state
+				pendingExtractedData = result.extracted;
+				showClarifyModal = true;
+				return; // Don't add to messages yet
+			}
+
+			// No clarification needed - proceed with save
+			extractedData = result.extracted;
 
 			// Check for coach challenges
 			const coaches = await checkCoachTriggers(content);
 
 			// Add assistant response
 			const assistantMessage = generateAssistantMessage(result);
+
+			// Only add to messages on SUCCESS
 			messages = [
 				...messages,
+				{ role: 'user', content },
 				{
 					role: 'assistant',
 					content: assistantMessage,
@@ -123,17 +271,11 @@
 				errorMessage = 'Request timed out. ';
 				recoveryGuidance = 'Try shorter messages.';
 			} else {
-				recoveryGuidance = 'Try rephrasing or use manual forms below.';
+				recoveryGuidance = 'Click "Try Again" above or rephrase.';
 			}
 
 			extractionError = errorMessage + recoveryGuidance;
-			messages = [
-				...messages,
-				{
-					role: 'assistant',
-					content: errorMessage + recoveryGuidance
-				}
-			];
+			// DON'T add to messages on error - keep transcription visible for retry
 		} finally {
 			isExtracting = false;
 		}
@@ -141,13 +283,48 @@
 
 	// Handle manual form data changes
 	function handleDataChange(data: ExtractEntryResponse['extracted']) {
-		extractedData = { ...extractedData, ...data };
+		// Deep merge to avoid unnecessary reference changes
+		const newData = { ...extractedData };
+
+		// Only update fields that actually changed
+		for (const key in data) {
+			const newValue = data[key as keyof typeof data];
+			const oldValue = extractedData[key as keyof typeof extractedData];
+
+			// Compare serialized values to detect real changes
+			if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+				(newData as any)[key] = newValue;
+			}
+		}
+
+		// Only trigger state update if something actually changed
+		if (JSON.stringify(newData) !== JSON.stringify(extractedData)) {
+			extractedData = newData;
+		}
 	}
 
 	// Handle voice transcription
 	function handleVoiceTranscription(text: string) {
 		// Submit transcribed text as user message
 		handleMessageSubmit(text);
+	}
+
+	// Handle morning ritual completion
+	function handleMorningRitual(data: { grateful: string; excited: string; priorities: string[] }) {
+		morningRitualComplete = true;
+
+		// Add to extracted data
+		extractedData.gratitude = [{ thing: data.grateful, why: '' }];
+		extractedData.intentions = data.priorities;
+
+		// Add to chat
+		const message = `Morning Ritual:\n\nGrateful: ${data.grateful}\nExcited: ${data.excited}\n\nPriorities:\n1. ${data.priorities[0]}\n2. ${data.priorities[1]}\n3. ${data.priorities[2]}`;
+
+		messages = [
+			...messages,
+			{ role: 'user', content: message },
+			{ role: 'assistant', content: 'Great start to the day! Let me know how it goes.' }
+		];
 	}
 
 	// Check for coach triggers
@@ -291,6 +468,33 @@
 		}
 	}
 
+	// Handle clarify modal save
+	function handleClarifyModalSave(clarifiedData: ExtractedData) {
+		// Update extracted data with clarified values
+		extractedData = clarifiedData;
+
+		// Close modal
+		showClarifyModal = false;
+		pendingExtractedData = null;
+
+		// Add to messages
+		const assistantMessage = `Got it! All fields clarified and saved.`;
+		messages = [
+			...messages,
+			{
+				role: 'assistant',
+				content: assistantMessage
+			}
+		];
+	}
+
+	// Handle clarify modal cancel
+	function handleClarifyModalCancel() {
+		showClarifyModal = false;
+		pendingExtractedData = null;
+		// Don't save anything - user canceled
+	}
+
 	// Core save logic
 	async function saveEntryToJournal() {
 		try {
@@ -382,109 +586,72 @@
 </script>
 
 <!-- Quote Header (Full Width) -->
-<QuoteHeader />
+<QuoteHeader date={currentDate} onPrevious={goToPreviousDay} onNext={goToNextDay} />
 
-<!-- Urgent Items Section -->
-<div class="mb-6">
-	<UrgentItemsSection />
-</div>
+<!-- Single Column Layout: Progressive Disclosure -->
+<div class="max-w-3xl mx-auto space-y-6">
+	<!-- Morning Ritual (only if not complete) -->
+	{#if !morningRitualComplete && messages.length === 0}
+		<MorningRitual onComplete={handleMorningRitual} />
+	{/if}
 
-<!-- Voice Recorder -->
-<div class="mb-6">
-	<VoiceRecorder onTranscription={handleVoiceTranscription} />
-</div>
+	<!-- Habit Streaks -->
+	<HabitStreaks />
 
-<!-- Desktop Layout: Chat-First (>1024px) -->
-<div class="hidden lg:flex gap-6 h-[calc(100vh-320px)]">
-	<!-- Left Sidebar: Weekly Priorities (20% width) -->
-	<div class="w-1/5 flex-shrink-0 space-y-4">
-		<WeeklyPrioritiesSidebar priorities={weeklyPriorities} isLoading={isLoadingPriorities} />
-
-		<!-- Quick Entry Sections (Desktop: Collapsed by default) -->
-		<QuickEntrySection section="morning" bind:extractedData onDataChange={handleDataChange} />
-		<QuickEntrySection section="evening" bind:extractedData onDataChange={handleDataChange} />
-	</div>
-
-	<!-- Center: Chat Interface (60% width) -->
-	<div class="flex-1 flex flex-col">
-		<!-- Confidence Warning -->
-		{#if extractionConfidence < 0.5}
-			<div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 rounded p-3">
-				<p class="text-sm text-yellow-800">
-					<span class="font-medium">{Math.round(extractionConfidence * 100)}% confidence.</span> Review
-					extracted data carefully.
-				</p>
-			</div>
-		{/if}
-
-		<!-- Error Toast -->
-		{#if extractionError}
-			<div class="mb-4 bg-red-50 border-l-4 border-red-400 rounded p-3 flex items-start justify-between gap-3">
-				<p class="text-sm text-red-800">{extractionError}</p>
-				<button
-					onclick={() => (extractionError = null)}
-					class="text-red-400 hover:text-red-600 text-lg leading-none"
-					aria-label="Dismiss"
-				>
-					×
-				</button>
-			</div>
-		{/if}
-
-		<ChatInterface {messages} onSubmit={handleMessageSubmit} isLoading={isExtracting} />
-	</div>
-
-	<!-- Right Sidebar: Extraction Preview (20% width) -->
-	<div class="w-1/5 flex-shrink-0">
-		<ExtractionPreview extraction={extractedData} onSave={handleSaveEntry} />
-	</div>
-</div>
-
-<!-- Mobile/Tablet Layout: Form-First (<1024px) -->
-<div class="lg:hidden space-y-4">
-	<!-- Toggle Button -->
-	<div class="flex gap-2">
-		<Button
-			variant={showQuickEntry ? 'primary' : 'secondary'}
-			fullWidth
-			onclick={() => (showQuickEntry = !showQuickEntry)}
-		>
-			{showQuickEntry ? '💬 Show Chat' : '📝 Quick Entry Forms'}
-		</Button>
-	</div>
-
-	{#if showQuickEntry}
-		<!-- Forms View (Mobile Primary) -->
-		<div class="space-y-4">
-			<QuickEntrySection section="morning" bind:extractedData onDataChange={handleDataChange} />
-			<QuickEntrySection section="evening" bind:extractedData onDataChange={handleDataChange} />
-			<ExtractionPreview extraction={extractedData} onSave={handleSaveEntry} />
-		</div>
-	{:else}
-		<!-- Chat View (Mobile Secondary) -->
-		<div class="h-[calc(100vh-280px)]">
-			{#if extractionError}
-				<div class="mb-4 bg-red-50 border-l-4 border-red-400 rounded p-3 flex items-start justify-between gap-3">
-					<p class="text-sm text-red-800">{extractionError}</p>
-					<button
-						onclick={() => (extractionError = null)}
-						class="text-red-400 hover:text-red-600 text-lg leading-none"
-						aria-label="Dismiss"
-					>
-						×
-					</button>
-				</div>
-			{/if}
-
-			<ChatInterface {messages} onSubmit={handleMessageSubmit} isLoading={isExtracting} />
-		</div>
-
-		<!-- Extraction Preview (Mobile Sticky Footer) -->
-		<div class="mt-4">
-			<ExtractionPreview extraction={extractedData} onSave={handleSaveEntry} />
+	<!-- Error Toast -->
+	{#if extractionError}
+		<div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start justify-between gap-3">
+			<p class="text-sm text-cloud-600">{extractionError}</p>
+			<button
+				onclick={() => (extractionError = null)}
+				class="text-cloud-400 hover:text-cloud-600 text-lg leading-none"
+				aria-label="Dismiss"
+			>
+				×
+			</button>
 		</div>
 	{/if}
 
-	<!-- Weekly Priorities (Mobile: Bottom) -->
-	<WeeklyPrioritiesSidebar priorities={weeklyPriorities} isLoading={isLoadingPriorities} />
+	<!-- Chat Interface -->
+	<ChatInterface
+		{messages}
+		onSubmit={handleMessageSubmit}
+		isLoading={isExtracting}
+		onVoiceClick={() => showVoiceModal = true}
+	/>
+
+	<!-- Extracted Data (Editable - shows after extraction) -->
+	{#if Object.keys(extractedData).length > 0}
+		<ExtractionPreview extraction={extractedData} onSave={handleSaveEntry} onDataChange={handleDataChange} />
+	{/if}
+
+	<!-- Urgent Items (Top 3, Collapsible) -->
+	<UrgentItemsSection />
+
+	<!-- Coach Challenges -->
+	<div class="mt-8">
+		<h3 class="text-sm font-semibold text-cloud-400 uppercase mb-4">Today's Challenges</h3>
+		<DailyCoachChallenges />
+	</div>
 </div>
+
+<!-- Voice Modal -->
+{#if showVoiceModal}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick={() => showVoiceModal = false}>
+		<div class="bg-white rounded-2xl p-6 max-w-lg w-full mx-4" onclick={(e) => e.stopPropagation()}>
+			<VoiceRecorder onTranscription={(text) => {
+				handleVoiceTranscription(text);
+				showVoiceModal = false;
+			}} />
+		</div>
+	</div>
+{/if}
+
+<!-- Clarify Modal (GTD Clarify Step) -->
+{#if showClarifyModal && pendingExtractedData}
+	<ClarifyModal
+		bind:extracted={pendingExtractedData}
+		onSave={handleClarifyModalSave}
+		onCancel={handleClarifyModalCancel}
+	/>
+{/if}

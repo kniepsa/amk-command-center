@@ -4,25 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Midnight palette - Deep dark backgrounds
-        midnight: {
-          950: "#0A0A0F", // Deepest background
-          900: "#11111A", // Card backgrounds
-          800: "#1A1A28", // Elevated surfaces
-          750: "#1F1F2F", // Hover surfaces
-          700: "#242438", // Borders and dividers
-          600: "#2E2E48", // Lighter borders
+        // Light Resend-inspired palette
+        cloud: {
+          50: "#FAFAFA", // Main background (off-white)
+          100: "#F5F5F5", // Subtle backgrounds
+          200: "#E5E5E5", // Borders
+          300: "#D4D4D4", // Hover borders
+          400: "#A3A3A3", // Muted text
+          500: "#737373", // Secondary text
+          600: "#525252", // Primary text
         },
-        // Glass transparency colors
-        glass: {
-          border: "rgba(255, 255, 255, 0.08)",
-          surface: "rgba(255, 255, 255, 0.03)",
-          hover: "rgba(255, 255, 255, 0.06)",
+        // Clean white surfaces
+        surface: {
+          white: "#FFFFFF",
+          hover: "#FAFAFA",
         },
-        // Electric primary colors
+        // Subtle accent (Resend-style)
+        accent: {
+          500: "#18181B", // Dark accent for text/buttons
+          hover: "#27272A",
+        },
+        // Optional: Keep electric for interactive elements
         electric: {
-          500: "#00D9FF", // Primary accent
-          600: "#00B8D4", // Hover state
+          500: "#0EA5E9", // Sky blue (lighter than previous)
+          600: "#0284C7", // Hover state
         },
       },
       backdropBlur: {
