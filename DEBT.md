@@ -1,6 +1,42 @@
 # Technical Debt
 
+## Critical Priority (P0+ - Blockers from Phase 2 Validation)
+
+### Phase 2 Integration Gap (Added 2026-02-14)
+
+**CRITICAL**: Backend services built but ZERO frontend integration. Overall validation score: 3.5/10
+
+- **Missing API Endpoints (4 hours)**: Backend has `deal-intelligence.ts` (361 lines) with fit scoring, red flags, recommendations but NO HTTP endpoints. Need:
+  - `GET /api/v1/buyers/:id/fit-score`
+  - `GET /api/v1/buyers/:id/red-flags`
+  - `POST /api/v1/buyers/:id/recommendations`
+  - `GET /api/v1/reviews/weekly` (M&A-specific, not generic GTD)
+
+- **M&A UI Components Missing (6 hours)**: Frontend has NO components for Phase 2 features:
+  - Fit score visualization (0-100 gauge)
+  - Red flag alert cards with coaching
+  - Recommendation cards with copy-paste scripts
+  - M&A weekly review page (top 3 buyers, ROI, ghosting alerts)
+
+- **Voice→CRM Pipeline Disconnected (2 hours)**: Voice page exists but doesn't call `VoiceCRMUpdater` service. No auto-update of buyer.offerAmount, tier, fitScore from voice input.
+
+- **Telegram Bot Not Integrated (4 hours)**: Service exists (`telegram-bot.ts`, 360 lines) but not connected to weekly insights or scheduler.
+
+**Impact**: 16 hours of backend work produces 0 user-facing features without integration layer.
+
 ## High Priority (P0 - Blockers)
+
+### M&A Tracker Frontend Issues (Added 2026-02-15 - Post Pure Headless Migration)
+
+**NOTE**: Fix AFTER Command Center is 100% working
+
+- **No data in pipeline view**: Frontend displays empty state despite backend having buyer data
+- **Can't select buyer in quick log**: Buyer selection dropdown not functioning
+- **No UI to add new buyer**: Missing "Add Buyer" button/form in frontend
+- **Root Cause**: Likely SDK client configuration mismatch or API endpoint changes during migration
+
+**Effort**: 2-3 hours investigation + fixes
+**Blocks**: M&A Tracker usability
 
 ### Phase 0 Critical Blockers (Added 2026-02-14 - Agent 6 Review)
 
@@ -15,6 +51,12 @@
 - **No audio feedback**: Silent confirmations create distrust - need TTS "Habit marked", "Entry saved"
 
 ## Medium Priority (P1 - High Impact)
+
+### Phase 2 Security Issues (from Phase 1 review - still apply)
+
+- **XSS Vulnerability (10 min)**: Voice transcription can inject `<script>` tags if using `{@html}` without DOMPurify sanitization
+- **No Rate Limiting (45 min)**: `/api/v1/transcribe` has no rate limit - DoS attack vector (10K requests/min)
+- **Insufficient Input Validation (20 min)**: No max length check (5000 char limit needed), workspace ID needs regex validation
 
 ### Phase 0 Medium Priority (Added 2026-02-14 - Agent 6 Review)
 
@@ -61,12 +103,14 @@
 
 ## Resolved This Session ✅
 
-- ~~**Weekly priorities API incomplete**: `/api/weekly/current` returns mock data~~ → Fixed: Now reads from amk-journal/users/amk/weekly-plans/ using gray-matter for frontmatter parsing (2026-02-13)
-- ~~**Urgent items API incomplete**: `/api/urgent` returns mock data~~ → Fixed: Now reads from amk-journal/users/amk/next.md with GTD-style parsing (2026-02-13)
-- ~~**Missing dependencies after npm --legacy-peer-deps**: gray-matter install removed tailwindcss, js-yaml~~ → Fixed: Reinstalled tailwindcss@4.1.18, @tailwindcss/postcss, js-yaml@4.1.1, @types/js-yaml (2026-02-13)
+- ~~**Phase 1 Voice Everywhere Implementation**: 5 agents built floating voice button (⌘V), contextual buyer cards, backend transcription API, voice command parser (20 commands), phonetic name matching~~ → Completed 2026-02-14
+- ~~**Phase 1 Code Review**: Validated against Context7 + Serper best practices. Score 8.3/10. Found 3 security issues (XSS, rate limiting, input validation)~~ → Completed 2026-02-14
 
 ## Archive (Previous Sessions)
 
+- ~~**Weekly priorities API incomplete**: `/api/weekly/current` returns mock data~~ → Fixed: Now reads from amk-journal/users/amk/weekly-plans/ using gray-matter for frontmatter parsing (2026-02-13)
+- ~~**Urgent items API incomplete**: `/api/urgent` returns mock data~~ → Fixed: Now reads from amk-journal/users/amk/next.md with GTD-style parsing (2026-02-13)
+- ~~**Missing dependencies after npm --legacy-peer-deps**: gray-matter install removed tailwindcss, js-yaml~~ → Fixed: Reinstalled tailwindcss@4.1.18, @tailwindcss/postcss, js-yaml@4.1.1, @types/js-yaml (2026-02-13)
 - ~~**Mobile responsiveness**: App not tested on mobile devices~~ → Fixed via Joe Gebbia Option 3 responsive layout (2026-02-11)
 - ~~**Accessibility warnings**: Labels need controls, click handlers need keyboard events~~ → Fixed via unique IDs, proper for/id associations (2026-02-11)
 - ~~**Error handling UI**: Generic error messages~~ → Fixed with specific recovery guidance (2026-02-11)
@@ -75,6 +119,13 @@
 ---
 
 ## Summary
+
+**Phase 2 Critical Gap (2026-02-14)**:
+
+- **Status**: Backend services 100% complete, Frontend integration 0% complete
+- **Validation Score**: 3.5/10 (FAIL)
+- **Fix Required**: 16 hours (4h API endpoints + 6h UI components + 2h voice pipeline + 4h Telegram)
+- **Impact**: Without integration, 4 parallel agents built dead code
 
 **Phase 0 Code Quality Review Impact (2026-02-14)**:
 
@@ -85,4 +136,4 @@
 
 ---
 
-_Last updated: 2026-02-14 (Phase 0 Agent 6 Review)_
+_Last updated: 2026-02-14 (Phase 2 Validation)_

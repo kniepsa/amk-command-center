@@ -78,3 +78,66 @@ h6 {
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* Mobile-Specific Styles */
+@media (max-width: 768px) {
+  /* Prevent text selection on buttons for better mobile UX */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  /* Larger text for readability */
+  body {
+    font-size: 16px; /* Prevents iOS auto-zoom on input focus */
+  }
+
+  /* Better input styling on mobile */
+  input,
+  textarea {
+    font-size: 16px; /* Prevents iOS auto-zoom */
+  }
+
+  /* Touch-friendly spacing */
+  .glass-card {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Touch feedback animation */
+.touch-active {
+  animation: touch-feedback 0.3s ease-out;
+}
+
+/* Highlight flash for deep link navigation */
+.highlight-flash {
+  animation: highlight-flash 2s ease-out;
+}
+
+@keyframes highlight-flash {
+  0% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 4px #fef3c7;
+  }
+  50% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 4px #fef3c7;
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Safe area for iPhone notch/home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

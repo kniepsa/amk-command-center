@@ -176,29 +176,35 @@
 </script>
 
 <div
-	class="bg-white backdrop-blur-glass border border-cloud-200 rounded-2xl p-6 shadow-glass transition-all duration-300 hover:border-electric-500/20"
+	class="bg-white backdrop-blur-glass border border-cloud-200 rounded-2xl p-4 md:p-6 shadow-glass transition-all duration-300 hover:border-electric-500/20"
 >
-	<!-- Wispr.ai Style: Green/Red Circle -->
+	<!-- Wispr.ai Style: Green/Red Circle (HUGE on mobile) -->
 	<div class="flex flex-col items-center gap-4">
 		{#if !isRecording}
 			<button
 				onclick={startRecording}
 				disabled={isTranscribing || isExtracting}
-				class="w-20 h-20 rounded-full transition-all shadow-lg hover:shadow-xl transform hover:scale-105 {isTranscribing || isExtracting ? 'bg-cloud-300 cursor-wait' : 'bg-green-500 hover:bg-green-600'}"
+				class="w-20 h-20 md:w-20 md:h-20 sm:w-24 sm:h-24 rounded-full transition-all shadow-lg hover:shadow-xl transform active:scale-95 md:hover:scale-105 {isTranscribing || isExtracting ? 'bg-cloud-300 cursor-wait' : 'bg-green-500 active:bg-green-600 md:hover:bg-green-600'}"
+				aria-label="Start voice recording"
 			>
+				<span class="text-3xl md:text-4xl" aria-hidden="true">🎤</span>
 			</button>
 			{#if isTranscribing}
-				<p class="text-sm text-cloud-500">Transcribing...</p>
+				<p class="text-sm md:text-base text-cloud-500">Transcribing...</p>
 			{:else if isExtracting}
-				<p class="text-sm text-cloud-500">Extracting...</p>
+				<p class="text-sm md:text-base text-cloud-500">Extracting...</p>
+			{:else}
+				<p class="text-xs md:text-sm text-cloud-400">Tap to start</p>
 			{/if}
 		{:else}
 			<button
 				onclick={stopRecording}
-				class="w-20 h-20 bg-red-500 hover:bg-red-600 rounded-full transition-all shadow-lg animate-pulse"
+				class="w-20 h-20 md:w-20 md:h-20 sm:w-24 sm:h-24 bg-red-500 active:bg-red-600 md:hover:bg-red-600 rounded-full transition-all shadow-lg animate-pulse"
+				aria-label="Stop recording"
 			>
+				<span class="text-3xl md:text-4xl" aria-hidden="true">⏹️</span>
 			</button>
-			<p class="text-sm text-cloud-500 font-mono">{formatTime(recordingTime)}</p>
+			<p class="text-base md:text-sm text-cloud-500 font-mono">{formatTime(recordingTime)}</p>
 		{/if}
 	</div>
 

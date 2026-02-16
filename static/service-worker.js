@@ -219,19 +219,80 @@ async function syncDrafts() {
 }
 
 /**
- * Get pending drafts (placeholder - implement with IndexedDB)
+ * Open IndexedDB database
  */
-async function getPendingDrafts() {
-  // TODO: Implement with IndexedDB
-  return [];
+async function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("amk-command-center-offline", 1);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+
+      if (!db.objectStoreNames.contains("drafts")) {
+        const draftStore = db.createObjectStore("drafts", { keyPath: "id" });
+        draftStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("voice-recordings")) {
+        const voiceStore = db.createObjectStore("voice-recordings", {
+          keyPath: "id",
+        });
+        voiceStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("pending-requests")) {
+        const requestStore = db.createObjectStore("pending-requests", {
+          keyPath: "id",
+        });
+        requestStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+    };
+  });
 }
 
 /**
- * Remove synced draft (placeholder - implement with IndexedDB)
+ * Get pending drafts from IndexedDB
+ */
+async function getPendingDrafts() {
+  try {
+    const db = await openDatabase();
+    const transaction = db.transaction(["drafts"], "readonly");
+    const store = transaction.objectStore("drafts");
+
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error("[ServiceWorker] Failed to get drafts:", error);
+    return [];
+  }
+}
+
+/**
+ * Remove synced draft from IndexedDB
  */
 async function removePendingDraft(id) {
-  // TODO: Implement with IndexedDB
-  console.log("[ServiceWorker] Removing draft:", id);
+  try {
+    const db = await openDatabase();
+    const transaction = db.transaction(["drafts"], "readwrite");
+    const store = transaction.objectStore("drafts");
+
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => {
+        console.log("[ServiceWorker] Draft removed:", id);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error("[ServiceWorker] Failed to remove draft:", error);
+  }
 }
 
 /**

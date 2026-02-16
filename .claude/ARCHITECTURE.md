@@ -12,10 +12,52 @@
 
 ## Key Services
 
-- **Frontend (SvelteKit 2 + Svelte 5)**: Single-page dashboard with tabs (Today, Projects, CRM, Decisions, Evening, Morning)
-- **API Routes**: SvelteKit server endpoints reading from filesystem
-- **Journal Reader (`$lib/server/journal-reader.ts`)**: Parses weekly plans with gray-matter, extracts priorities
-- **Authentication**: Session-based cookies (24h expiration), hooks.server.ts middleware
+### Frontend (SvelteKit 2 + Svelte 5)
+
+- **UI Components**: Single-page dashboard with tabs (Today, Projects, CRM, Decisions, Evening, Morning)
+- **SDK Client** (`@amk/command-center-sdk`): Type-safe wrapper for backend API
+- **State Management**: Svelte 5 runes ($state, $derived, $props)
+- **Authentication**: Session-based cookies (24h expiration)
+
+### Backend (Journal API - Port 3002)
+
+- **Runtime**: Bun (faster than Node.js)
+- **Framework**: Hono (lightweight HTTP router)
+- **ORM**: Drizzle ORM with SQLite adapter
+- **Routes**:
+  - `/api/v1/entries` - Daily journal entries (CRUD)
+  - `/api/v1/people` - CRM contacts (CRUD) 🆕
+  - `/api/v1/daily-reviews` - Morning/evening reviews (CRUD) 🆕
+  - `/api/v1/habits` - Habit tracking + streak calculation 🆕
+  - `/api/v1/buyers` - M&A buyer tracking
+  - `/api/v1/weekly` - Weekly priorities
+  - `/api/v1/urgent` - GTD next actions
+- **Authentication**: Bearer token (API key)
+
+### Database (SQLite)
+
+- **Location**: `.claude/api/.claude/data/journal.db`
+- **Schema**:
+  - `workspaces` - Multi-tenant support
+  - `users` - User profiles
+  - `entries` - Daily journal entries
+  - `people` - CRM contacts 🆕
+  - `daily_reviews` - Morning/evening reviews 🆕
+  - `habits` + `habit_logs` - Habit tracking 🆕
+  - `buyers` + `interactions` - M&A tracking
+  - `tasks` - GTD tasks
+  - `gratitude` + `food` - Daily logging
+
+### SDK Package (`@amk/command-center-sdk`)
+
+- **Location**: `/Users/amk/Projects/amk-journal/packages/command-center-sdk`
+- **Endpoints**:
+  - `client.entries.*` - Entry operations
+  - `client.people.*` - CRM operations 🆕
+  - `client.dailyReviews.*` - Review operations 🆕
+  - `client.habits.*` - Habit operations 🆕
+  - `client.buyers.*` - M&A operations
+- **Features**: TypeScript types, error handling, workspace isolation
 
 ## External Integrations
 

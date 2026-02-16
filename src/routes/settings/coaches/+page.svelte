@@ -1,7 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { CoachConfig, CoachesConfig, ChallengeLevel } from '$lib/types/coach';
+  import type { ChallengeLevel } from '$lib/types/coach';
+  import type { CoachesConfig } from '$lib/api/journal-client';
+  import { getCoachConfig, updateCoachConfig } from '$lib/api/journal-client';
   import { getCoach } from '$lib/coaches';
+
+  const WORKSPACE_ID = 'amk';
 
   let coachesConfig: CoachesConfig | null = null;
   let loading = true;
@@ -14,15 +18,7 @@
 
   async function loadCoachesConfig() {
     try {
-      // In production, this would load from /Users/amk/.config/command-center/coaches.json
-      // For now, we'll use a placeholder that could be replaced with an API call
-      const response = await fetch('/api/coaches/config');
-      if (response.ok) {
-        coachesConfig = await response.json();
-      } else {
-        // Fallback to default config
-        coachesConfig = getDefaultConfig();
-      }
+      coachesConfig = await getCoachConfig(WORKSPACE_ID);
     } catch (error) {
       console.error('Failed to load coaches config:', error);
       coachesConfig = getDefaultConfig();
@@ -132,18 +128,9 @@
     saveMessage = '';
 
     try {
-      const response = await fetch('/api/coaches/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(coachesConfig)
-      });
-
-      if (response.ok) {
-        saveMessage = 'Preferences saved successfully!';
-        setTimeout(() => (saveMessage = ''), 3000);
-      } else {
-        saveMessage = 'Failed to save preferences. Please try again.';
-      }
+      await updateCoachConfig(WORKSPACE_ID, coachesConfig);
+      saveMessage = 'Preferences saved successfully!';
+      setTimeout(() => (saveMessage = ''), 3000);
     } catch (error) {
       console.error('Save error:', error);
       saveMessage = 'Error saving preferences. Check console for details.';

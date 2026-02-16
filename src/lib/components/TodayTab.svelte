@@ -9,19 +9,23 @@
 	import VoiceRecorder from './VoiceRecorder.svelte';
 	import MorningRitual from './MorningRitual.svelte';
 	import HabitStreaks from './HabitStreaks.svelte';
-	import DailyCoachChallenges from './DailyCoachChallenges.svelte';
+	import CalendarSection from './CalendarSection.svelte';
+import DailyCoachChallenges from './DailyCoachChallenges.svelte';
 	import ClarifyModal from './ClarifyModal.svelte';
-	import type { WeeklyPriority, ExtractEntryResponse } from '$lib/types';
+	import { api, type EntryFrontmatter } from '$lib/api/client';
+	import type { WeeklyPriority } from '$lib/types';
 	import type { CoachChallenge } from '$lib/types/coach';
+	import { getCoachConfig } from '$lib/api/journal-client';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { BRAND } from '$lib/brand';
+	import { getRewardMessage, getNextMilestone } from '$lib/utils/variable-rewards';
 
 	// State for chat messages
 	let messages = $state<
 		Array<{ role: 'user' | 'assistant'; content: string; coaches?: CoachChallenge[] }>
 	>([]);
-	let extractedData = $state<ExtractEntryResponse['extracted']>({});
+	let extractedData = $state<EntryFrontmatter>({});
 	let weeklyPriorities = $state<WeeklyPriority[]>([]);
 	let isExtracting = $state(false);
 	let isLoadingPriorities = $state(true);
@@ -36,7 +40,58 @@
 	let morningRitualComplete = $state(false);
 	let currentDate = $state(new Date());
 	let showClarifyModal = $state(false);
-	let pendingExtractedData = $state<ExtractEntryResponse['extracted'] | null>(null);
+	let pendingExtractedData = $state<EntryFrontmatter | null>(null);
+	let currentJournalingStreak = $state(1); // Default to 1, will be fetched from API
+
+	// Collapsible section state
+	let dailyAIExpanded = $state(true);
+	let learningExpanded = $state(true);
+
+	// Check if Daily AI section is complete
+	let dailyAIComplete = $derived(
+		extractedData.energy &&
+		extractedData.intentions?.length > 0 &&
+		extractedData.gratitude?.length >= 1
+	);
+
+	// Load collapsed state from localStorage
+	$effect(() => {
+		if (!browser) return;
+
+		const savedDailyAI = localStorage.getItem('dailyAIExpanded');
+		const savedLearning = localStorage.getItem('learningExpanded');
+
+		if (savedDailyAI !== null) {
+			dailyAIExpanded = JSON.parse(savedDailyAI);
+		}
+		if (savedLearning !== null) {
+			learningExpanded = JSON.parse(savedLearning);
+		}
+	});
+
+	// Auto-collapse when sections complete
+	$effect(() => {
+		if (dailyAIComplete && dailyAIExpanded) {
+			// Auto-collapse when complete
+			dailyAIExpanded = false;
+			if (browser) {
+				localStorage.setItem('dailyAIExpanded', 'false');
+			}
+		}
+	});
+
+	// Persist expansion state to localStorage
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('dailyAIExpanded', JSON.stringify(dailyAIExpanded));
+		}
+	});
+
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('learningExpanded', JSON.stringify(learningExpanded));
+		}
+	});
 
 	// Day navigation functions
 	function goToPreviousDay() {
@@ -60,6 +115,7 @@
 		prioritiesMounted = true;
 		loadWeeklyPriorities();
 		loadTodayEntry();
+		loadHabitStreaks();
 	});
 
 	// Load today's journal entry
@@ -67,39 +123,41 @@
 		await loadEntryForDate(currentDate);
 	}
 
+	// Load habit streaks from API
+	async function loadHabitStreaks() {
+		try {
+			const result = await api.habits.getStreaks();
+
+			// Find journaling habit
+			const journalingHabit = result.habits.find(
+				h => h.name.toLowerCase() === 'journaling' || h.name.toLowerCase() === 'morning ritual'
+			);
+
+			if (journalingHabit) {
+				currentJournalingStreak = journalingHabit.currentStreak;
+			}
+		} catch (error) {
+			console.error('Error loading habit streaks:', error);
+			// Keep default value of 1 on error
+		}
+	}
+
 	// Load journal entry for specific date
 	async function loadEntryForDate(date: Date) {
 		try {
 			const dateStr = date.toISOString().split('T')[0];
-			const response = await fetch(`/api/entries/${dateStr}`);
 
-			if (response.ok) {
-				const data = await response.json();
+			// Use SDK to get entry
+			const data = await api.entries.get(dateStr);
 
-				// Load extracted data from frontmatter
-				if (data.frontmatter) {
-					extractedData = {
-						sleep: data.frontmatter.sleep,
-						energy: data.frontmatter.energy,
-						habits: data.frontmatter.habits,
-						intentions: data.frontmatter.intentions,
-						gratitude: data.frontmatter.gratitude,
-						food: data.frontmatter.food,
-						tags: data.frontmatter.tags,
-						people: data.frontmatter.people,
-						frameworks: data.frontmatter.frameworks,
-						contexts: data.frontmatter.contexts
-					};
-				}
+			// Load extracted data from frontmatter
+			extractedData = data.frontmatter || {};
 
-				// Parse body to reconstruct chat messages
-				if (data.body) {
-					const parsedMessages = parseJournalBody(data.body);
-					messages = parsedMessages;
-				}
+			// Parse body to reconstruct chat messages
+			if (data.content) {
+				const parsedMessages = parseJournalBody(data.content);
+				messages = parsedMessages;
 			} else {
-				// No entry for this date - clear data
-				extractedData = {};
 				messages = [];
 			}
 		} catch (error) {
@@ -186,16 +244,26 @@
 		};
 	});
 
-	// Load weekly priorities from API
+	// Load weekly priorities from backend API via SDK
 	async function loadWeeklyPriorities() {
 		isLoadingPriorities = true;
 		try {
-			const response = await fetch('/api/weekly/current');
-			if (!response.ok) {
-				throw new Error('Failed to load priorities');
+			const { getWeeklyPlan } = await import('$lib/api/journal-client');
+			const plan = await getWeeklyPlan();
+
+			if (plan && plan.priorities) {
+				// Convert backend priorities to frontend format
+				weeklyPriorities = plan.priorities.map((p, index) => ({
+					id: `${plan.week}-p${index + 1}`,
+					text: p.title,
+					days_active: 0, // Backend doesn't track this yet
+					total_days: 7,
+					progress_percent: 0,
+					status: p.status
+				}));
+			} else {
+				weeklyPriorities = [];
 			}
-			const data = await response.json();
-			weeklyPriorities = data.priorities || [];
 		} catch (error) {
 			console.error('Error loading priorities:', error);
 			weeklyPriorities = [];
@@ -211,21 +279,14 @@
 		extractionError = null;
 
 		try {
-			const response = await fetch('/api/extract-entry', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					date: new Date().toISOString().split('T')[0],
-					text: content,
-					existing: extractedData
-				})
+			const today = new Date().toISOString().split('T')[0];
+
+			// Use SDK to extract
+			const result = await api.entries.extract({
+				transcription: content,
+				date: today,
+				existing: extractedData
 			});
-
-			if (!response.ok) {
-				throw new Error('Extraction failed');
-			}
-
-			const result: ExtractEntryResponse = await response.json();
 
 			// Store extraction confidence
 			extractionConfidence = result.confidence || 1.0;
@@ -320,23 +381,32 @@
 		// Add to chat
 		const message = `Morning Ritual:\n\nGrateful: ${data.grateful}\nExcited: ${data.excited}\n\nPriorities:\n1. ${data.priorities[0]}\n2. ${data.priorities[1]}\n3. ${data.priorities[2]}`;
 
+		// VARIABLE REWARD (Nir Eyal Hook Model)
+		// Use real streak from API
+		const reward = getRewardMessage(currentJournalingStreak);
+
+		// Add milestone progress if approaching next celebration (within 3 days)
+		const nextMilestone = getNextMilestone(currentJournalingStreak);
+		let rewardText = reward.content;
+		if (nextMilestone.days <= 3 && nextMilestone.days > 0) {
+			rewardText += `\n\n🎯 ${nextMilestone.days} days until ${nextMilestone.milestone}-day milestone!`;
+		}
+
 		messages = [
 			...messages,
 			{ role: 'user', content: message },
-			{ role: 'assistant', content: 'Great start to the day! Let me know how it goes.' }
+			{ role: 'assistant', content: rewardText }
 		];
+
+		// Reload streaks after completing morning ritual (for immediate feedback)
+		loadHabitStreaks();
 	}
 
 	// Check for coach triggers
 	async function checkCoachTriggers(text: string): Promise<CoachChallenge[]> {
 		try {
 			// Load coach config
-			const configResponse = await fetch('/api/coaches/config');
-			if (!configResponse.ok) {
-				return [];
-			}
-
-			const config = await configResponse.json();
+			const config = await getCoachConfig('amk');
 			const challenges: CoachChallenge[] = [];
 
 			// Check each enabled coach for triggers
@@ -500,53 +570,6 @@
 		try {
 			const today = new Date().toISOString().split('T')[0];
 
-			// Build frontmatter from extracted data
-			const frontmatter: Record<string, any> = {
-				date: today,
-				schema_version: 2
-			};
-
-			// Add extracted fields to frontmatter
-			if (extractedData.energy) {
-				frontmatter.energy = extractedData.energy;
-			}
-
-			if (extractedData.sleep) {
-				frontmatter.sleep = extractedData.sleep;
-			}
-
-			if (extractedData.habits) {
-				frontmatter.habits = extractedData.habits;
-			}
-
-			if (extractedData.intentions && extractedData.intentions.length > 0) {
-				frontmatter.intentions = extractedData.intentions;
-			}
-
-			if (extractedData.gratitude && extractedData.gratitude.length > 0) {
-				frontmatter.gratitude = extractedData.gratitude;
-			}
-
-			if (extractedData.food && extractedData.food.length > 0) {
-				frontmatter.food = extractedData.food;
-			}
-
-			if (extractedData.tags && extractedData.tags.length > 0) {
-				frontmatter.tags = extractedData.tags;
-			}
-
-			if (extractedData.people && extractedData.people.length > 0) {
-				frontmatter.people = extractedData.people;
-			}
-
-			if (extractedData.frameworks && extractedData.frameworks.length > 0) {
-				frontmatter.frameworks = extractedData.frameworks;
-			}
-
-			if (extractedData.contexts && extractedData.contexts.length > 0) {
-				frontmatter.contexts = extractedData.contexts;
-			}
-
 			// Build body from chat messages
 			const body = messages
 				.map((msg) => {
@@ -563,19 +586,13 @@
 				.filter((s) => s.trim() !== '')
 				.join('\n');
 
-			// Call API
-			const response = await fetch(`/api/entries/${today}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ frontmatter, body })
+			// Use SDK to save entry
+			const result = await api.entries.save(today, {
+				frontmatter: extractedData,
+				body,
+				append: false
 			});
 
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error || 'Failed to save entry');
-			}
-
-			const result = await response.json();
 			console.log('Entry saved successfully:', result);
 			return result;
 		} catch (error) {
@@ -589,14 +606,55 @@
 <QuoteHeader date={currentDate} onPrevious={goToPreviousDay} onNext={goToNextDay} />
 
 <!-- Single Column Layout: Progressive Disclosure -->
-<div class="max-w-3xl mx-auto space-y-6">
-	<!-- Morning Ritual (only if not complete) -->
-	{#if !morningRitualComplete && messages.length === 0}
-		<MorningRitual onComplete={handleMorningRitual} />
-	{/if}
+<div class="max-w-3xl mx-auto space-y-4 md:space-y-6">
+	<!-- Daily AI Section (Collapsible) -->
+	{#if !dailyAIComplete || dailyAIExpanded}
+		<section class="daily-ai-section">
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-lg font-semibold text-cloud-800">Daily AI</h2>
+				{#if dailyAIComplete}
+					<button
+						onclick={() => {
+							dailyAIExpanded = false;
+						}}
+						class="text-sm text-electric-600 hover:text-electric-700 font-medium flex items-center gap-1"
+					>
+						<span>✓</span>
+						<span>Collapse</span>
+					</button>
+				{/if}
+			</div>
 
-	<!-- Habit Streaks -->
-	<HabitStreaks />
+			<!-- Morning Ritual (only if not complete) -->
+			{#if !morningRitualComplete && messages.length === 0}
+				<MorningRitual onComplete={handleMorningRitual} />
+			{/if}
+
+			<!-- Today's Calendar -->
+			<CalendarSection />
+
+			<!-- Habit Streaks -->
+			<HabitStreaks />
+		</section>
+	{:else}
+		<div class="collapsed-section">
+			<button
+				onclick={() => {
+					dailyAIExpanded = true;
+				}}
+				class="w-full text-left flex items-center justify-between p-4 hover:bg-cloud-50 transition-colors rounded-lg"
+			>
+				<div class="flex items-center gap-3">
+					<span class="text-2xl">✓</span>
+					<div>
+						<h3 class="font-semibold text-cloud-800">Daily AI Complete</h3>
+						<p class="text-sm text-cloud-500">Energy logged, intentions set, gratitude captured</p>
+					</div>
+				</div>
+				<span class="text-cloud-400">Expand →</span>
+			</button>
+		</div>
+	{/if}
 
 	<!-- Error Toast -->
 	{#if extractionError}
@@ -655,3 +713,26 @@
 		onCancel={handleClarifyModalCancel}
 	/>
 {/if}
+
+<style>
+	.collapsed-section {
+		background: #f0f9ff;
+		border: 1px dashed #3b82f6;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		transition: all 0.2s ease;
+	}
+
+	.collapsed-section:hover {
+		background: #e0f2fe;
+		border-color: #2563eb;
+	}
+
+	.collapsed-section button {
+		color: inherit;
+	}
+
+	.daily-ai-section {
+		transition: all 0.3s ease;
+	}
+</style>

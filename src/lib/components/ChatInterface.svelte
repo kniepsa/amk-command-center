@@ -23,6 +23,23 @@
 	let currentInput = $state('');
 	let chatContainer: HTMLDivElement;
 	let showLearningInEmpty = $state(true);
+	let learningExpanded = $state(true);
+
+	// Load learning expanded state from localStorage
+	if (typeof window !== 'undefined') {
+		const saved = localStorage.getItem('learningExpanded');
+		if (saved !== null) {
+			learningExpanded = JSON.parse(saved);
+		}
+	}
+
+	// Persist learning expanded state
+	function handleLearningToggle(expanded: boolean) {
+		learningExpanded = expanded;
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('learningExpanded', JSON.stringify(expanded));
+		}
+	}
 
 	// Auto-scroll to bottom when new messages arrive
 	$effect(() => {
@@ -74,7 +91,7 @@
 					{/if}
 
 					<!-- Learning Session -->
-					<LearningSession />
+					<LearningSession expanded={learningExpanded} onToggle={handleLearningToggle} />
 				</div>
 			{:else}
 				<!-- Fallback: Just Green Circle -->
@@ -126,7 +143,7 @@
 					<!-- Learning Session (if triggered) -->
 					{#if message.showLearning}
 						<div class="pl-6 mt-4">
-							<LearningSession />
+							<LearningSession expanded={learningExpanded} onToggle={handleLearningToggle} />
 						</div>
 					{/if}
 				{/if}

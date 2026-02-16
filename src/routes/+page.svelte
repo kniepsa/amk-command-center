@@ -3,6 +3,7 @@
 	import CRMTab from '$lib/components/CRMTab.svelte';
 	import WeeklyTab from '$lib/components/WeeklyTab.svelte';
 	import StrategicTab from '$lib/components/StrategicTab.svelte';
+	import MobileTabBar from '$lib/components/MobileTabBar.svelte';
 	import { BRAND } from '$lib/brand';
 	import { onMount } from 'svelte';
 
@@ -76,18 +77,20 @@
 	}
 </script>
 
-<div class="min-h-screen bg-cloud-50">
+<div class="min-h-screen bg-cloud-50 pb-20 md:pb-0">
 	<!-- Minimalist Header (Resend-style) -->
 	<header class="bg-white border-b border-cloud-200">
-		<div class="max-w-7xl mx-auto px-6 py-4">
+		<div class="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
 			<div class="flex items-center justify-between">
 				<div>
-					<h1 class="text-xl font-semibold text-cloud-600">Nexus AI</h1>
-					<p class="text-sm text-cloud-500 mt-0.5">Your AI productivity partner</p>
+					<h1 class="text-lg md:text-xl font-semibold text-cloud-600">Nexus AI</h1>
+					<p class="text-xs md:text-sm text-cloud-500 mt-0.5 hidden sm:block">
+						Your AI productivity partner
+					</p>
 				</div>
 				<button
 					onclick={handleLogout}
-					class="px-4 py-2 text-cloud-500 hover:text-cloud-600 text-sm font-medium transition-colors"
+					class="px-3 md:px-4 py-2 text-cloud-500 hover:text-cloud-600 text-xs md:text-sm font-medium transition-colors min-h-touch-min"
 				>
 					Logout
 				</button>
@@ -95,8 +98,8 @@
 		</div>
 	</header>
 
-	<!-- Minimal Tab Navigation (Resend-style) -->
-	<nav class="bg-white border-b border-cloud-200">
+	<!-- Desktop Tab Navigation (hidden on mobile) -->
+	<nav class="hidden md:block bg-white border-b border-cloud-200">
 		<div class="max-w-7xl mx-auto px-6">
 			<div class="flex gap-6">
 				{#each tabs as tab}
@@ -117,7 +120,7 @@
 	</nav>
 
 	<!-- Tab Content -->
-	<main class="max-w-7xl mx-auto px-6 py-8">
+	<main class="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
 		<div class:hidden={activeTab !== 'today'}>
 			<TodayTab />
 		</div>
@@ -131,4 +134,7 @@
 			<StrategicTab />
 		</div>
 	</main>
+
+	<!-- Mobile Bottom Tab Bar -->
+	<MobileTabBar {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 </div>

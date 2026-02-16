@@ -6,6 +6,8 @@
 	import UndoToast from '$lib/components/UndoToast.svelte';
 	import IOSInstallPrompt from '$lib/components/IOSInstallPrompt.svelte';
 	import ResumeSessionPrompt from '$lib/components/ResumeSessionPrompt.svelte';
+	import OfflineSyncIndicator from '$lib/components/OfflineSyncIndicator.svelte';
+	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 	import { undoLast, getLastAction } from '$lib/stores/action-history.svelte';
 	import { initAutoSave } from '$lib/utils/auto-save';
 	import { browser } from '$app/environment';
@@ -67,14 +69,26 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
-	<link rel="manifest" href="/manifest.json" />
-	<meta name="theme-color" content="#667eea" />
-	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-	<meta name="apple-mobile-web-app-title" content="AMK CC" />
 	<title>AMK Command Center</title>
 </svelte:head>
+
+<!-- Global Header with Search -->
+<header class="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3">
+	<div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+		<!-- Logo/Title -->
+		<div class="flex-shrink-0">
+			<h1 class="text-lg font-semibold text-gray-900">AMK Command Center</h1>
+		</div>
+
+		<!-- Global Search -->
+		<div class="flex-1 max-w-2xl">
+			<GlobalSearch />
+		</div>
+
+		<!-- Menu placeholder (for future navigation) -->
+		<div class="flex-shrink-0 w-8"></div>
+	</div>
+</header>
 
 <!-- Persistence manager handles localStorage sync -->
 <PersistenceManager />
@@ -87,5 +101,8 @@
 
 <!-- Resume session prompt (only shows if saved session exists) -->
 <ResumeSessionPrompt />
+
+<!-- Offline sync indicator (shows when offline or has pending items) -->
+<OfflineSyncIndicator />
 
 {@render children()}

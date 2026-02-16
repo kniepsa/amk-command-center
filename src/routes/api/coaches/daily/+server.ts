@@ -1,3 +1,19 @@
+/**
+ * DEPRECATED: This route has been migrated to the backend.
+ *
+ * This file is kept for backward compatibility but should be removed once all clients
+ * have migrated to use the backend API:
+ * - Backend: /api/v1/coaches/daily (GET)
+ * - Frontend: Uses journal-client.ts (getDailyCoaches)
+ *
+ * Migration completed: 2026-02-15
+ * Safe to delete after verification.
+ *
+ * ============================================================================
+ * LEGACY ROUTE - DO NOT USE
+ * ============================================================================
+ */
+
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 

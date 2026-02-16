@@ -1,24 +1,17 @@
 <script lang="ts">
-	/**
-	 * PersistenceManager - Handles auto-save to localStorage
-	 * Uses $effect to save dataStore changes to localStorage
-	 * Must be mounted in a component to use $effect properly
-	 */
-	import { saveToLocalStorage } from '$lib/utils/persistence.svelte';
-	import { STORAGE_KEYS } from '$lib/utils/constants';
-	import { dataStore } from '$lib/stores/data.svelte';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
-	// Auto-save contacts to localStorage on changes
-	$effect(() => {
-		// Save contacts array to localStorage
-		saveToLocalStorage(STORAGE_KEYS.CONTACTS, dataStore.contacts);
-	});
+	// This component handles localStorage persistence
+	// Currently a placeholder - can be extended for data sync
+	onMount(() => {
+		if (!browser) return;
 
-	// Auto-save interactions to localStorage on changes
-	$effect(() => {
-		// Save interactions array to localStorage
-		saveToLocalStorage(STORAGE_KEYS.INTERACTIONS, dataStore.interactions);
+		console.log('[PersistenceManager] Initialized');
+
+		// Future: Add sync logic here
+		// - Save session state to localStorage
+		// - Restore on page load
+		// - Handle offline queue
 	});
 </script>
-
-<!-- This component has no visual output - it only handles persistence -->

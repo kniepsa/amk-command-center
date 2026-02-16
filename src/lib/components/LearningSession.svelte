@@ -31,10 +31,29 @@
     lesson: Lesson;
   }
 
+  interface Props {
+    expanded?: boolean;
+    onToggle?: (expanded: boolean) => void;
+  }
+
+  let { expanded = true, onToggle }: Props = $props();
+
   let showCourseSelection = $state(false);
   let courses = $state<Course[]>([]);
   let activeCourse = $state<ActiveCourse | null>(null);
   let isLoading = $state(true);
+  let lessonComplete = $state(false);
+
+  // Check if lesson is complete from localStorage
+  $effect(() => {
+    if (browser && activeCourse) {
+      const key = `lesson-complete-${activeCourse.courseId}-day-${activeCourse.currentDay}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        lessonComplete = JSON.parse(saved);
+      }
+    }
+  });
 
   // Load active course or show selection
   $effect(() => {
@@ -89,16 +108,61 @@
   }
 
   function markComplete() {
-    // TODO: Mark day as complete, advance to next day
+    if (browser && activeCourse) {
+      const key = `lesson-complete-${activeCourse.courseId}-day-${activeCourse.currentDay}`;
+      localStorage.setItem(key, 'true');
+      lessonComplete = true;
+
+      // Auto-collapse on completion
+      if (onToggle) {
+        onToggle(false);
+      }
+    }
     console.log('Lesson complete');
   }
 </script>
 
-{#if isLoading}
-  <div class="flex items-center justify-center p-12">
-    <div class="text-cloud-400">Loading...</div>
+<!-- Collapsible Wrapper -->
+{#if activeCourse && lessonComplete && !expanded}
+  <!-- Collapsed State -->
+  <div class="collapsed-section">
+    <button
+      onclick={() => onToggle?.(true)}
+      class="w-full text-left flex items-center justify-between p-4 hover:bg-cloud-50 transition-colors rounded-lg border border-cloud-200 bg-white"
+    >
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">✓</span>
+        <div>
+          <h3 class="font-semibold text-cloud-800">
+            {activeCourse.courseName} - Day {activeCourse.currentDay} Complete
+          </h3>
+          <p class="text-sm text-cloud-500">{activeCourse.lesson.title}</p>
+        </div>
+      </div>
+      <span class="text-cloud-400">Expand →</span>
+    </button>
   </div>
-{:else if showCourseSelection}
+{:else}
+  <!-- Expanded State -->
+  <div class="learning-section">
+    {#if lessonComplete && activeCourse}
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-cloud-800">Sales Learning</h2>
+        <button
+          onclick={() => onToggle?.(false)}
+          class="text-sm text-electric-600 hover:text-electric-700 font-medium flex items-center gap-1"
+        >
+          <span>✓</span>
+          <span>Collapse</span>
+        </button>
+      </div>
+    {/if}
+
+    {#if isLoading}
+      <div class="flex items-center justify-center p-12">
+        <div class="text-cloud-400">Loading...</div>
+      </div>
+    {:else if showCourseSelection}
   <!-- Course Selection -->
   <div class="p-6 space-y-6">
     <div class="text-center mb-8">
@@ -219,4 +283,29 @@
       </div>
     </div>
   </div>
+    {/if}
+  </div>
 {/if}
+
+<style>
+  .collapsed-section {
+    background: #f0f9ff;
+    border: 1px dashed #3b82f6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .collapsed-section:hover {
+    background: #e0f2fe;
+    border-color: #2563eb;
+  }
+
+  .collapsed-section button {
+    color: inherit;
+  }
+
+  .learning-section {
+    transition: all 0.3s ease;
+  }
+</style>

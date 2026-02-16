@@ -1,92 +1,14 @@
 import type { Contact, Interaction } from "$lib/types";
-import { INITIAL_CONTACTS, INITIAL_INTERACTIONS } from "$lib/data/initial-data";
-import { STORAGE_KEYS } from "$lib/utils/constants";
 
 /**
- * Type guards for runtime validation
- */
-function isContactArray(value: unknown): value is Contact[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        typeof item === "object" &&
-        item !== null &&
-        "handle" in item &&
-        "name" in item &&
-        typeof item.handle === "string" &&
-        typeof item.name === "string",
-    )
-  );
-}
-
-function isInteractionArray(value: unknown): value is Interaction[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        typeof item === "object" &&
-        item !== null &&
-        "id" in item &&
-        "contact" in item &&
-        "date" in item &&
-        typeof item.id === "string" &&
-        typeof item.contact === "string",
-    )
-  );
-}
-
-/**
- * Load initial data from localStorage (SSR-safe)
- */
-function loadContacts(): Contact[] {
-  if (typeof window === "undefined") return INITIAL_CONTACTS;
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.CONTACTS);
-    if (!stored) return INITIAL_CONTACTS;
-
-    const parsed = JSON.parse(stored);
-    if (!isContactArray(parsed)) {
-      console.warn("Invalid contacts in localStorage, using defaults");
-      return INITIAL_CONTACTS;
-    }
-
-    return parsed;
-  } catch (error) {
-    console.error("Failed to load contacts:", error);
-    return INITIAL_CONTACTS;
-  }
-}
-
-function loadInteractions(): Interaction[] {
-  if (typeof window === "undefined") return INITIAL_INTERACTIONS;
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.INTERACTIONS);
-    if (!stored) return INITIAL_INTERACTIONS;
-
-    const parsed = JSON.parse(stored);
-    if (!isInteractionArray(parsed)) {
-      console.warn("Invalid interactions in localStorage, using defaults");
-      return INITIAL_INTERACTIONS;
-    }
-
-    return parsed;
-  } catch (error) {
-    console.error("Failed to load interactions:", error);
-    return INITIAL_INTERACTIONS;
-  }
-}
-
-/**
- * Persisted reactive state using Svelte 5 runes + localStorage
- * Wrapped in an object to allow safe module-level export
- * Auto-saves handled by PersistenceManager component
+ * Reactive state using Svelte 5 runes
+ * Data loaded from backend API, not localStorage
+ * NOTE: This store is DEPRECATED - use SDK directly in components
+ * Kept for backwards compatibility during migration
  */
 export const dataStore = $state({
-  contacts: loadContacts(),
-  interactions: loadInteractions(),
+  contacts: [] as Contact[],
+  interactions: [] as Interaction[],
 });
 
 /**

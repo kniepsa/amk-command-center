@@ -18,13 +18,14 @@
 	import AudioPlayer from '$lib/components/voice/AudioPlayer.svelte';
 	import EntryHistory from '$lib/components/voice/EntryHistory.svelte';
 	import { detectCoachChallenges, type CoachChallenge as CoachChallengeType } from '$lib/utils/coach-detector';
-	import type { ExtractedData } from '$lib/types';
+	import { api } from '$lib/api/client';
+	import type { EntryFrontmatter, ExtractRequest } from '$lib/api/client';
 
 	interface SavedEntry {
 		id: string;
 		timestamp: string;
 		transcription: string;
-		extractedData: ExtractedData;
+		extractedData: EntryFrontmatter;
 		completeness: number;
 	}
 
@@ -33,7 +34,7 @@
 	let isTranscribing = $state(false);
 	let isSaving = $state(false);
 	let transcription = $state<string | null>(null);
-	let extractedData = $state<ExtractedData | null>(null);
+	let extractedData = $state<EntryFrontmatter | null>(null);
 	let coachChallenges = $state<CoachChallengeType[]>([]);
 	let error = $state<string | null>(null);
 	let success = $state<string | null>(null);
@@ -151,22 +152,16 @@
 
 	async function extractFromTranscription(text: string) {
 		try {
-			// Call extraction API
-			const response = await fetch('/api/extract-entry', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					date: new Date().toISOString().split('T')[0],
-					text,
-					existing: extractedData || {}
-				})
-			});
+			const today = new Date().toISOString().split('T')[0];
 
-			if (!response.ok) {
-				throw new Error('Extraction failed');
-			}
+			// Use SDK to extract from transcription
+			const request: ExtractRequest = {
+				transcription: text,
+				date: today,
+				existing: extractedData || undefined
+			};
 
-			const result = await response.json();
+			const result = await api.entries.extract(request);
 			extractedData = result.extracted;
 
 			// Detect coach challenges (up to 2 coaches)
@@ -177,7 +172,7 @@
 		}
 	}
 
-	function calculateCompleteness(data: ExtractedData): number {
+	function calculateCompleteness(data: EntryFrontmatter): number {
 		const fields = [
 			'energy',
 			'sleep',
@@ -186,8 +181,7 @@
 			'gratitude',
 			'food',
 			'people',
-			'frameworks',
-			'contexts'
+			'tags'
 		];
 
 		let filled = 0;
@@ -200,8 +194,7 @@
 		if (data.gratitude && data.gratitude.length > 0) filled++;
 		if (data.food && data.food.length > 0) filled++;
 		if (data.people && data.people.length > 0) filled++;
-		if (data.frameworks && data.frameworks.length > 0) filled++;
-		if (data.contexts && data.contexts.length > 0) filled++;
+		if (data.tags && data.tags.length > 0) filled++;
 
 		return Math.round((filled / total) * 100);
 	}
@@ -215,31 +208,6 @@
 
 		try {
 			const today = new Date().toISOString().split('T')[0];
-
-			// Build frontmatter from extracted data
-			const frontmatter: Record<string, any> = {
-				date: today,
-				schema_version: 2
-			};
-
-			// Add extracted fields
-			if (extractedData.energy) frontmatter.energy = extractedData.energy;
-			if (extractedData.sleep) frontmatter.sleep = extractedData.sleep;
-			if (extractedData.habits) frontmatter.habits = extractedData.habits;
-			if (extractedData.intentions && extractedData.intentions.length > 0)
-				frontmatter.intentions = extractedData.intentions;
-			if (extractedData.gratitude && extractedData.gratitude.length > 0)
-				frontmatter.gratitude = extractedData.gratitude;
-			if (extractedData.food && extractedData.food.length > 0)
-				frontmatter.food = extractedData.food;
-			if (extractedData.tags && extractedData.tags.length > 0)
-				frontmatter.tags = extractedData.tags;
-			if (extractedData.people && extractedData.people.length > 0)
-				frontmatter.people = extractedData.people;
-			if (extractedData.frameworks && extractedData.frameworks.length > 0)
-				frontmatter.frameworks = extractedData.frameworks;
-			if (extractedData.contexts && extractedData.contexts.length > 0)
-				frontmatter.contexts = extractedData.contexts;
 
 			// Build body
 			let body = `## 📝 Voice Entry\n\n${transcription}\n`;
@@ -260,20 +228,14 @@
 			// Determine if we should append (if there are already saved entries today)
 			const append = savedEntries.length > 0;
 
-			// Call API
-			const response = await fetch(`/api/entries/${today}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ frontmatter, body, append })
+			// Use SDK to save entry
+			const result = await api.entries.save(today, {
+				frontmatter: extractedData,
+				body,
+				append
 			});
 
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to save entry');
-			}
-
-			const result = await response.json();
-			success = `✅ Entry ${append ? 'appended' : 'saved'}: ${result.filePath}`;
+			success = `✅ Entry ${result.appended ? 'appended' : 'saved'}: ${result.filePath}`;
 
 			// Add to saved entries history
 			const savedEntry: SavedEntry = {

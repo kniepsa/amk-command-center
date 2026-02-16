@@ -45,6 +45,7 @@ export default {
       animation: {
         "confetti-fall": "confetti-fall 2s ease-out forwards",
         pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "touch-feedback": "touch-feedback 0.3s ease-out",
       },
       keyframes: {
         "confetti-fall": {
@@ -54,6 +55,17 @@ export default {
             opacity: "0",
           },
         },
+        "touch-feedback": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)" },
+        },
+      },
+      spacing: {
+        "touch-min": "44px", // iOS minimum touch target
+        "touch-comfortable": "48px", // Android recommended
+        "safe-bottom": "env(safe-area-inset-bottom)", // iPhone notch/home indicator
+        "safe-top": "env(safe-area-inset-top)",
       },
     },
   },
