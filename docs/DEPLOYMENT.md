@@ -33,6 +33,7 @@ bun run dev
 ```
 
 **Backend serves:**
+
 - Command Center API (workspace: amk)
 - M&A Tracker API (workspace: ma)
 - Shared endpoints (search, tasks, people)
@@ -62,11 +63,13 @@ npm run dev
 ### 3. Verify Setup
 
 **Backend Health Check:**
+
 ```bash
 curl http://localhost:3002/api/v1/health | jq
 ```
 
 **Expected Response:**
+
 ```json
 {
   "status": "ok",
@@ -77,11 +80,13 @@ curl http://localhost:3002/api/v1/health | jq
 ```
 
 **Frontend Access:**
+
 ```bash
 open http://localhost:5173
 ```
 
 **Expected:**
+
 - Quote header loads
 - Morning ritual form visible
 - Habit streaks display (mock data)
@@ -96,6 +101,7 @@ open http://localhost:5173
 **Location:** `/Users/amk/Projects/amk-journal/.claude/api/.env`
 
 **Required Variables:**
+
 ```bash
 # Server Configuration
 PORT=3002
@@ -114,6 +120,7 @@ GOOGLE_CALENDAR_API_KEY=...  # For calendar sync (future)
 ```
 
 **Create File:**
+
 ```bash
 cd /Users/amk/Projects/amk-journal/.claude/api
 cp .env.example .env
@@ -127,6 +134,7 @@ nano .env  # Edit with your API keys
 **Location:** `/Users/amk/Projects/amk-command-center/.env`
 
 **Required Variables:**
+
 ```bash
 # Backend API URL
 VITE_API_URL=http://localhost:3002/api/v1
@@ -139,6 +147,7 @@ PUBLIC_PLAUSIBLE_DOMAIN=command-center.local
 ```
 
 **Create File:**
+
 ```bash
 cd /Users/amk/Projects/amk-command-center
 touch .env
@@ -154,6 +163,7 @@ nano .env  # Add variables above
 **Location:** `/Users/amk/Projects/amk-journal/.claude/api/.claude/data/journal.db`
 
 **First Time Setup:**
+
 ```bash
 cd /Users/amk/Projects/amk-journal/.claude/api
 
@@ -169,6 +179,7 @@ bun run db:migrate
 ```
 
 **Verify Database:**
+
 ```bash
 # Check database file exists
 ls -lh .claude/data/journal.db
@@ -199,6 +210,7 @@ bun run db:seed
 ```
 
 **Verify Seed:**
+
 ```bash
 # Start backend
 bun run dev
@@ -216,6 +228,7 @@ curl "http://localhost:3002/api/v1/search?q=leon&workspace=ma" | jq
 ### Backend Tests
 
 **Run Backend Tests:**
+
 ```bash
 cd /Users/amk/Projects/amk-journal/.claude/api
 
@@ -229,6 +242,7 @@ bun test:integration
 ```
 
 **Manual API Tests:**
+
 ```bash
 # Health check
 curl http://localhost:3002/api/v1/health
@@ -248,6 +262,7 @@ curl http://localhost:3002/api/v1/urgent | jq
 ### Frontend Tests
 
 **Run Frontend Tests:**
+
 ```bash
 cd /Users/amk/Projects/amk-command-center
 
@@ -316,6 +331,7 @@ npm run build
 ```
 
 **Preview Build:**
+
 ```bash
 npm run preview
 
@@ -325,6 +341,7 @@ npm run preview
 ```
 
 **Test Production Build:**
+
 ```bash
 open http://localhost:4173
 ```
@@ -367,6 +384,7 @@ pm2 save
 ```
 
 **Nginx Reverse Proxy:**
+
 ```nginx
 # /etc/nginx/sites-available/amk-api
 server {
@@ -389,6 +407,7 @@ server {
 #### Option 2: Railway.app (Easiest)
 
 **Setup:**
+
 1. Create account at [railway.app](https://railway.app)
 2. Click "New Project" → "Deploy from GitHub"
 3. Select `amk-journal` repo
@@ -397,6 +416,7 @@ server {
 6. Deploy
 
 **Railway Config:**
+
 ```toml
 # railway.toml
 [build]
@@ -410,6 +430,7 @@ restartPolicyMaxRetries = 10
 ```
 
 **Custom Domain:**
+
 - Settings → Domains → Add custom domain
 - Add DNS record: `api.amk-command-center.com` → Railway CNAME
 - SSL auto-enabled
@@ -419,6 +440,7 @@ restartPolicyMaxRetries = 10
 #### Option 3: Fly.io (Docker)
 
 **Dockerfile:**
+
 ```dockerfile
 # .claude/api/Dockerfile
 FROM oven/bun:1-alpine
@@ -445,6 +467,7 @@ CMD ["bun", "run", "start"]
 ```
 
 **Deploy:**
+
 ```bash
 cd /Users/amk/Projects/amk-journal/.claude/api
 
@@ -489,10 +512,12 @@ vercel --prod
 ```
 
 **Environment Variables (Vercel Dashboard):**
+
 - `VITE_API_URL` = `https://api.amk-command-center.com/api/v1`
 - `PUBLIC_WORKSPACE` = `amk`
 
 **Custom Domain:**
+
 - Settings → Domains → Add domain
 - Add DNS record: `command-center.amk.com` → Vercel
 - SSL auto-enabled
@@ -518,6 +543,7 @@ netlify deploy --prod
 ```
 
 **netlify.toml:**
+
 ```toml
 [build]
   command = "npm run build"
@@ -567,12 +593,14 @@ server {
 ### Backend Monitoring
 
 **Health Check Endpoint:**
+
 ```bash
 # Ping every 5 minutes
 */5 * * * * curl -f http://localhost:3002/api/v1/health || systemctl restart amk-api
 ```
 
 **Logs:**
+
 ```bash
 # PM2 logs
 pm2 logs amk-api
@@ -585,6 +613,7 @@ ls -lh /Users/amk/Projects/amk-journal/.claude/api/.claude/data/journal.db
 ```
 
 **Metrics:**
+
 - Request count: Track in application logs
 - Response time: Use `console.time()` in routes
 - Database size: Monitor with `ls -lh`
@@ -595,12 +624,18 @@ ls -lh /Users/amk/Projects/amk-journal/.claude/api/.claude/data/journal.db
 ### Frontend Monitoring
 
 **Analytics (Plausible):**
+
 ```html
 <!-- Add to src/app.html -->
-<script defer data-domain="command-center.amk.com" src="https://plausible.io/js/script.js"></script>
+<script
+  defer
+  data-domain="command-center.amk.com"
+  src="https://plausible.io/js/script.js"
+></script>
 ```
 
 **Error Tracking (Sentry - Optional):**
+
 ```bash
 npm install @sentry/sveltekit
 
@@ -620,6 +655,7 @@ Sentry.init({
 ### Database Backups
 
 **Automated Daily Backups:**
+
 ```bash
 #!/bin/bash
 # /etc/cron.daily/backup-journal-db
@@ -639,6 +675,7 @@ find $BACKUP_DIR -name "journal-*.db.gz" -mtime +30 -delete
 ```
 
 **Manual Backup:**
+
 ```bash
 cd /Users/amk/Projects/amk-journal/.claude/api/.claude/data
 
@@ -654,6 +691,7 @@ sqlite3 journal-2026-02-16-100000.db "SELECT COUNT(*) FROM entries;"
 ### Configuration Backups
 
 **Backup .env files:**
+
 ```bash
 # Create secure backup (encrypted)
 tar -czf config-backup.tar.gz .env
@@ -673,6 +711,7 @@ tar -xzf config-backup.tar.gz
 **Error:** `EADDRINUSE: address already in use :::3002`
 
 **Fix:**
+
 ```bash
 # Find process using port 3002
 lsof -i :3002
@@ -691,6 +730,7 @@ bun run dev
 **Error:** `SQLITE_BUSY: database is locked`
 
 **Fix:**
+
 ```bash
 # Check for zombie connections
 fuser .claude/data/journal.db
@@ -709,6 +749,7 @@ bun run dev
 **Error:** `Failed to fetch` (CORS or wrong URL)
 
 **Fix:**
+
 ```bash
 # 1. Check backend is running
 curl http://localhost:3002/api/v1/health
@@ -728,6 +769,7 @@ npm run dev
 **Error:** Empty results array despite data existing
 
 **Fix:**
+
 ```bash
 # 1. Check database has data
 cd /Users/amk/Projects/amk-journal/.claude/api
@@ -747,6 +789,7 @@ grep -r "handleSearchRoutes" routes/v1/index.ts
 ### Backend Optimizations
 
 **1. Database Indexes:**
+
 ```sql
 -- Add indexes for common searches
 CREATE INDEX idx_buyers_name ON buyers(name);
@@ -756,9 +799,10 @@ CREATE INDEX idx_people_handle ON people(handle);
 ```
 
 **2. Response Caching:**
+
 ```typescript
 // Add Redis caching (optional)
-import Redis from 'ioredis';
+import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL);
 
@@ -769,7 +813,7 @@ async function cachedSearch(query: string) {
   if (cached) return JSON.parse(cached);
 
   const results = await performSearch(query);
-  await redis.set(cacheKey, JSON.stringify(results), 'EX', 300);  // 5 min TTL
+  await redis.set(cacheKey, JSON.stringify(results), "EX", 300); // 5 min TTL
 
   return results;
 }
@@ -780,19 +824,22 @@ async function cachedSearch(query: string) {
 ### Frontend Optimizations
 
 **1. Code Splitting:**
+
 ```typescript
 // Lazy load heavy components
-const CalendarSection = lazy(() => import('./CalendarSection.svelte'));
-const HabitStreaks = lazy(() => import('./HabitStreaks.svelte'));
+const CalendarSection = lazy(() => import("./CalendarSection.svelte"));
+const HabitStreaks = lazy(() => import("./HabitStreaks.svelte"));
 ```
 
 **2. Image Optimization:**
+
 ```bash
 # Install sharp for automatic image optimization
 npm install @sveltejs/enhanced-img
 ```
 
 **3. Bundle Analysis:**
+
 ```bash
 # Check bundle size
 npm run build -- --mode analyze

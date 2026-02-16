@@ -6,6 +6,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
     "generate-icons": "node scripts/generate-icons.mjs"
   },
   "devDependencies": {

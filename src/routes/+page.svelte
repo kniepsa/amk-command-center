@@ -1,44 +1,53 @@
 <script lang="ts">
+	import CaptureTab from '$lib/components/CaptureTab.svelte';
 	import TodayTab from '$lib/components/TodayTab.svelte';
+	import HabitsTab from '$lib/components/HabitsTab.svelte';
 	import CRMTab from '$lib/components/CRMTab.svelte';
-	import WeeklyTab from '$lib/components/WeeklyTab.svelte';
-	import StrategicTab from '$lib/components/StrategicTab.svelte';
+	import PlanTab from '$lib/components/PlanTab.svelte';
+	import InsightsTab from '$lib/components/InsightsTab.svelte';
 	import MobileTabBar from '$lib/components/MobileTabBar.svelte';
-	import { BRAND } from '$lib/brand';
 	import { onMount } from 'svelte';
 
-	type Tab = 'today' | 'crm' | 'weekly' | 'strategic';
+	type Tab = 'capture' | 'today' | 'habits' | 'people' | 'plan' | 'insights';
 
 	let activeTab = $state<Tab>('today');
 
-	const tabs: Array<{ id: Tab; label: string; icon: string; shortcut: string; description: string }> = [
+	const tabs: Array<{ id: Tab; label: string; icon: string; shortcut: string }> = [
+		{
+			id: 'capture',
+			label: 'Capture',
+			icon: '📥',
+			shortcut: '⌘1'
+		},
 		{
 			id: 'today',
-			label: BRAND.copy.tabs.today.label,
-			icon: '🤖',
-			shortcut: '⌘1',
-			description: BRAND.copy.tabs.today.description
+			label: 'Today',
+			icon: '⚡',
+			shortcut: '⌘2'
 		},
 		{
-			id: 'crm',
-			label: BRAND.copy.tabs.crm.label,
-			icon: '🧠',
-			shortcut: '⌘2',
-			description: BRAND.copy.tabs.crm.description
-		},
-		{
-			id: 'weekly',
-			label: BRAND.copy.tabs.weekly.label,
-			icon: '📊',
-			shortcut: '⌘3',
-			description: BRAND.copy.tabs.weekly.description
-		},
-		{
-			id: 'strategic',
-			label: BRAND.copy.tabs.strategic.label,
+			id: 'habits',
+			label: 'Habits',
 			icon: '🎯',
-			shortcut: '⌘4',
-			description: BRAND.copy.tabs.strategic.description
+			shortcut: '⌘3'
+		},
+		{
+			id: 'people',
+			label: 'People',
+			icon: '👥',
+			shortcut: '⌘4'
+		},
+		{
+			id: 'plan',
+			label: 'Plan',
+			icon: '📋',
+			shortcut: '⌘5'
+		},
+		{
+			id: 'insights',
+			label: 'Insights',
+			icon: '📊',
+			shortcut: '⌘6'
 		}
 	];
 
@@ -49,19 +58,27 @@
 				switch (e.key) {
 					case '1':
 						e.preventDefault();
-						activeTab = 'today';
+						activeTab = 'capture';
 						break;
 					case '2':
 						e.preventDefault();
-						activeTab = 'crm';
+						activeTab = 'today';
 						break;
 					case '3':
 						e.preventDefault();
-						activeTab = 'weekly';
+						activeTab = 'habits';
 						break;
 					case '4':
 						e.preventDefault();
-						activeTab = 'strategic';
+						activeTab = 'people';
+						break;
+					case '5':
+						e.preventDefault();
+						activeTab = 'plan';
+						break;
+					case '6':
+						e.preventDefault();
+						activeTab = 'insights';
 						break;
 				}
 			}
@@ -104,14 +121,19 @@
 			<div class="flex gap-6">
 				{#each tabs as tab}
 					<button
-						class="py-3 text-sm font-medium transition-colors relative {activeTab === tab.id
-							? 'text-accent-500'
+						class="py-3 text-sm font-medium transition-colors relative group {activeTab === tab.id
+							? 'text-electric-600'
 							: 'text-cloud-500 hover:text-cloud-600'}"
 						onclick={() => (activeTab = tab.id)}
+						title={`${tab.label} (${tab.shortcut})`}
 					>
+						<span class="mr-1">{tab.icon}</span>
 						{tab.label}
+						<span class="ml-1 text-xs text-cloud-400 opacity-0 group-hover:opacity-100 transition-opacity"
+							>{tab.shortcut}</span
+						>
 						{#if activeTab === tab.id}
-							<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500"></div>
+							<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-electric-600"></div>
 						{/if}
 					</button>
 				{/each}
@@ -121,17 +143,23 @@
 
 	<!-- Tab Content -->
 	<main class="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
+		<div class:hidden={activeTab !== 'capture'}>
+			<CaptureTab />
+		</div>
 		<div class:hidden={activeTab !== 'today'}>
 			<TodayTab />
 		</div>
-		<div class:hidden={activeTab !== 'crm'}>
+		<div class:hidden={activeTab !== 'habits'}>
+			<HabitsTab />
+		</div>
+		<div class:hidden={activeTab !== 'people'}>
 			<CRMTab />
 		</div>
-		<div class:hidden={activeTab !== 'weekly'}>
-			<WeeklyTab />
+		<div class:hidden={activeTab !== 'plan'}>
+			<PlanTab />
 		</div>
-		<div class:hidden={activeTab !== 'strategic'}>
-			<StrategicTab />
+		<div class:hidden={activeTab !== 'insights'}>
+			<InsightsTab />
 		</div>
 	</main>
 

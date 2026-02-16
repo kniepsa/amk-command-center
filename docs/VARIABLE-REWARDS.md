@@ -9,10 +9,13 @@
 ## Quick Reference
 
 ```typescript
-import { getRewardMessage, getNextMilestone } from '$lib/utils/variable-rewards';
+import {
+  getRewardMessage,
+  getNextMilestone,
+} from "$lib/utils/variable-rewards";
 
 // Get reward for completion
-const reward = getRewardMessage(30);  // 30-day streak
+const reward = getRewardMessage(30); // 30-day streak
 // → { content: "⭐ 30 DAYS! You've transformed your mornings.", emoji: "👑" }
 
 // Check next milestone
@@ -32,6 +35,7 @@ if (next.days <= 3) {
 ### The Problem with Static Rewards
 
 **Static (Boring):**
+
 ```typescript
 // Day 1: "Entry saved successfully!"
 // Day 2: "Entry saved successfully!"
@@ -40,6 +44,7 @@ if (next.days <= 3) {
 ```
 
 **Variable (Engaging):**
+
 ```typescript
 // Day 1: "Beautiful start! Today's going to be great. ✨"
 // Day 2: "You're on fire! Keep that momentum going. 🔥"
@@ -50,14 +55,15 @@ if (next.days <= 3) {
 
 ### Nir Eyal's Hook Model
 
-| Stage | Static Rewards | Variable Rewards |
-|-------|----------------|------------------|
-| **Trigger** | Same email daily | Smart timing + context |
-| **Action** | Click button | Voice-first (10s) |
-| **Reward** | "Success!" every time | Rotating messages + milestones |
-| **Investment** | Data saved | Streak visible (sunk cost) |
+| Stage          | Static Rewards        | Variable Rewards               |
+| -------------- | --------------------- | ------------------------------ |
+| **Trigger**    | Same email daily      | Smart timing + context         |
+| **Action**     | Click button          | Voice-first (10s)              |
+| **Reward**     | "Success!" every time | Rotating messages + milestones |
+| **Investment** | Data saved            | Streak visible (sunk cost)     |
 
 **Result:**
+
 - Static: 3/10 Hook Score → Low retention
 - Variable: 8/10 Hook Score → Daily habit
 
@@ -70,6 +76,7 @@ if (next.days <= 3) {
 **Definition:** Fixed rewards for significant achievements.
 
 **Milestones:**
+
 - 7 days: "🎉 7-DAY STREAK! You're building a real habit here. 🏆"
 - 14 days: "🔥 TWO WEEKS! Most people quit by now. Not you. 💎"
 - 30 days: "⭐ 30 DAYS! You've transformed your mornings. 👑"
@@ -78,6 +85,7 @@ if (next.days <= 3) {
 - 365 days: "🎊 ONE FULL YEAR! Habits don't get stronger than this. 🌟"
 
 **Why These Numbers:**
+
 - **7 days:** First week is hardest (40% drop-off)
 - **14 days:** Two weeks = habit starts forming
 - **30 days:** One month = sustainable routine
@@ -86,14 +94,24 @@ if (next.days <= 3) {
 - **365 days:** Full year (mastery level)
 
 **Code:**
+
 ```typescript
 const MILESTONE_REWARDS: Record<number, RewardMessage> = {
-  7: { content: "🎉 7-DAY STREAK! You're building a real habit here.", emoji: "🏆" },
-  14: { content: "🔥 TWO WEEKS! Most people quit by now. Not you.", emoji: "💎" },
+  7: {
+    content: "🎉 7-DAY STREAK! You're building a real habit here.",
+    emoji: "🏆",
+  },
+  14: {
+    content: "🔥 TWO WEEKS! Most people quit by now. Not you.",
+    emoji: "💎",
+  },
   30: { content: "⭐ 30 DAYS! You've transformed your mornings.", emoji: "👑" },
   50: { content: "🚀 50 DAYS! This is legendary consistency.", emoji: "🦅" },
   100: { content: "💯 CENTURY CLUB! You're in the top 1% now.", emoji: "🏅" },
-  365: { content: "🎊 ONE FULL YEAR! Habits don't get stronger than this.", emoji: "🌟" }
+  365: {
+    content: "🎊 ONE FULL YEAR! Habits don't get stronger than this.",
+    emoji: "🌟",
+  },
 };
 ```
 
@@ -104,6 +122,7 @@ const MILESTONE_REWARDS: Record<number, RewardMessage> = {
 **Definition:** Rotating messages to prevent habituation.
 
 **Message Pool (7 variants):**
+
 1. "Beautiful start! Today's going to be great. ✨"
 2. "You're on fire! Keep that momentum going. 🔥"
 3. "Love your focus. Let's make it count. 🎯"
@@ -113,17 +132,20 @@ const MILESTONE_REWARDS: Record<number, RewardMessage> = {
 7. "Intentional and clear. Exactly right. 🎨"
 
 **Random Selection:**
+
 ```typescript
 const randomIndex = Math.floor(Math.random() * COMPLETION_MESSAGES.length);
 return COMPLETION_MESSAGES[randomIndex];
 ```
 
 **Why 7 Messages:**
+
 - 7 = large enough pool to feel unpredictable
 - Small enough to maintain quality (each message crafted)
 - User won't see same message twice in one week
 
 **Tone:**
+
 - Warm and encouraging (Bill Campbell style)
 - No corporate-speak ("saved successfully")
 - Active voice ("You're on fire" > "Entry was saved")
@@ -136,6 +158,7 @@ return COMPLETION_MESSAGES[randomIndex];
 **Definition:** Encouragement after missing days (James Clear's "Never miss twice").
 
 **Trigger Condition:**
+
 ```typescript
 if (previousStreak > 7 && currentStreak <= 2) {
   // User had a good streak (7+ days) but broke it
@@ -144,17 +167,20 @@ if (previousStreak > 7 && currentStreak <= 2) {
 ```
 
 **Message Pool (4 variants):**
+
 1. "You had a 44-day streak. One miss doesn't erase that. Let's go. 💪"
 2. "Missing once is life. Missing twice is a choice. You're back. 🔄"
 3. "The comeback is always stronger than the setback. ⚡"
 4. "Champions don't quit after one miss. Restart mode: ON. 🎯"
 
 **Why Recovery Messages:**
+
 - **Psychology:** User feels guilty after breaking streak → needs reassurance
 - **James Clear:** "Never miss twice" principle → one miss is OK, two is pattern
 - **Retention:** Without recovery, 60% of users quit after breaking streak
 
 **Example Flow:**
+
 ```
 Day 1-44: Consistent streak
 Day 45: MISSED (life happens)
@@ -171,18 +197,21 @@ Day 46: User returns → Recovery message appears
 **Purpose:** Get appropriate reward message based on streak status.
 
 **Parameters:**
+
 - `currentStreak` (number): Current consecutive days (default: 1)
 - `previousStreak` (number): Previous streak before break (default: 0)
 
 **Returns:** `RewardMessage`
+
 ```typescript
 interface RewardMessage {
-  content: string;  // Message text
-  emoji?: string;   // Optional emoji (for UI)
+  content: string; // Message text
+  emoji?: string; // Optional emoji (for UI)
 }
 ```
 
 **Priority Order:**
+
 1. Milestone celebration (if streak matches milestone)
 2. Recovery message (if streak was broken recently)
 3. Random completion message (default)
@@ -195,7 +224,7 @@ getRewardMessage(7);
 // → { content: "🎉 7-DAY STREAK! You're building a real habit here.", emoji: "🏆" }
 
 // Recovery message (broken streak)
-getRewardMessage(1, 44);  // Current: 1, Previous: 44
+getRewardMessage(1, 44); // Current: 1, Previous: 44
 // → { content: "You had a 44-day streak. One miss doesn't erase that...", emoji: "💪" }
 
 // Random completion (no milestone, no recovery)
@@ -210,6 +239,7 @@ getRewardMessage(5);
 **Purpose:** Calculate days until next milestone celebration.
 
 **Parameters:**
+
 - `currentStreak` (number): Current consecutive days
 
 **Returns:** `{ days: number, milestone: number }`
@@ -259,7 +289,7 @@ getNextMilestone(150);
 ```typescript
 function handleMorningRitual(data: { grateful: string; priorities: string[] }) {
   // Get current streak from API (TODO: connect to backend)
-  const currentStreak = 30;  // Placeholder
+  const currentStreak = 30; // Placeholder
 
   // Get variable reward
   const reward = getRewardMessage(currentStreak);
@@ -275,13 +305,14 @@ function handleMorningRitual(data: { grateful: string; priorities: string[] }) {
   // Add to chat
   messages = [
     ...messages,
-    { role: 'user', content: `Morning Ritual: ${data.grateful}...` },
-    { role: 'assistant', content: rewardText }
+    { role: "user", content: `Morning Ritual: ${data.grateful}...` },
+    { role: "assistant", content: rewardText },
   ];
 }
 ```
 
 **Example Output (Day 28):**
+
 ```
 Assistant: "Strong start. You're setting the tone. 🚀
 
@@ -296,14 +327,17 @@ Assistant: "Strong start. You're setting the tone. 🚀
 
 ```typescript
 async function toggleHabit(habitId: string) {
-  const habit = streaks.find(h => h.id === habitId);
+  const habit = streaks.find((h) => h.id === habitId);
 
   // Update streak
   if (habit.completed_today) {
     habit.current_streak += 1;
 
     // Get variable reward
-    const reward = getRewardMessage(habit.current_streak, habit.previous_streak);
+    const reward = getRewardMessage(
+      habit.current_streak,
+      habit.previous_streak,
+    );
 
     // Show toast notification
     showToast(reward.content, { emoji: reward.emoji, duration: 5000 });
@@ -312,6 +346,7 @@ async function toggleHabit(habitId: string) {
 ```
 
 **Example Toasts:**
+
 - Day 5: "Love your focus. Let's make it count. 🎯"
 - Day 7: "🎉 7-DAY STREAK! You're building a real habit here. 🏆"
 - Day 14: "🔥 TWO WEEKS! Most people quit by now. Not you. 💎"
@@ -332,21 +367,22 @@ function generateWeeklySummary(streaks: HabitStreak[]) {
     // Check if milestone achieved this week
     const weekStart = habit.current_streak - 7;
     const milestoneHit = [7, 14, 30, 50, 100, 365].find(
-      m => m > weekStart && m <= habit.current_streak
+      (m) => m > weekStart && m <= habit.current_streak,
     );
 
     if (milestoneHit) {
       summaryParts.push(
-        `${habit.icon} ${habit.name}: HIT ${milestoneHit}-DAY MILESTONE! 🎉`
+        `${habit.icon} ${habit.name}: HIT ${milestoneHit}-DAY MILESTONE! 🎉`,
       );
     }
   }
 
-  return summaryParts.join('\n');
+  return summaryParts.join("\n");
 }
 ```
 
 **Example Output:**
+
 ```
 Weekly Habit Summary:
 
@@ -362,16 +398,19 @@ Weekly Habit Summary:
 ### The Skinner Box Experiment
 
 **Fixed Reward (Predictable):**
+
 - Rat presses lever → Gets food every time
 - Result: Rat presses lever when hungry, stops when full
 - Habituation: Predictable reward = no excitement
 
 **Variable Reward (Unpredictable):**
+
 - Rat presses lever → Gets food SOMETIMES
 - Result: Rat keeps pressing lever obsessively
 - Dopamine: Uncertainty creates anticipation
 
 **Application to Habits:**
+
 ```typescript
 // Fixed (Boring):
 "Entry saved successfully!" (every time)
@@ -388,6 +427,7 @@ Random selection from 7 messages + milestone surprises
 Dopamine is released during ANTICIPATION, not reward.
 
 **Variable rewards maximize anticipation:**
+
 1. User completes morning ritual
 2. Brain thinks: "What message will I get today?"
 3. Dopamine spike BEFORE seeing message
@@ -395,6 +435,7 @@ Dopamine is released during ANTICIPATION, not reward.
 5. Brain remembers: "This was fun, do again tomorrow"
 
 **Predictable rewards kill anticipation:**
+
 1. User completes morning ritual
 2. Brain thinks: "It'll say 'success' again"
 3. No dopamine spike (already knows outcome)
@@ -423,12 +464,14 @@ getRewardMessage(1, 44);
 ```
 
 **Why This Works:**
+
 1. User feels guilty (lost 44-day streak)
 2. Recovery message reframes: "One miss is OK"
 3. User thinks: "I can still do this"
 4. User continues (avoids "miss twice" pattern)
 
 **Without recovery message:**
+
 1. User feels guilty (lost 44-day streak)
 2. Default message: "Beautiful start!" (feels hollow)
 3. User thinks: "I already failed, what's the point?"
@@ -441,24 +484,26 @@ getRewardMessage(1, 44);
 ### Test Setup
 
 **Control Group (Static Rewards):**
+
 - Message: "Entry saved successfully!"
 - n = 1,000 users
 - Test duration: 30 days
 
 **Treatment Group (Variable Rewards):**
+
 - Messages: Milestones + Random + Recovery
 - n = 1,000 users
 - Test duration: 30 days
 
 ### Results
 
-| Metric | Control (Static) | Treatment (Variable) | Improvement |
-|--------|------------------|----------------------|-------------|
-| **Day 7 Retention** | 45% | 68% | +51% |
-| **Day 14 Retention** | 28% | 52% | +86% |
-| **Day 30 Retention** | 12% | 38% | +217% |
-| **Avg Streak Length** | 4.2 days | 9.8 days | +133% |
-| **Recovery Rate** | 15% | 62% | +313% |
+| Metric                | Control (Static) | Treatment (Variable) | Improvement |
+| --------------------- | ---------------- | -------------------- | ----------- |
+| **Day 7 Retention**   | 45%              | 68%                  | +51%        |
+| **Day 14 Retention**  | 28%              | 52%                  | +86%        |
+| **Day 30 Retention**  | 12%              | 38%                  | +217%       |
+| **Avg Streak Length** | 4.2 days         | 9.8 days             | +133%       |
+| **Recovery Rate**     | 15%              | 62%                  | +313%       |
 
 **Key Finding:** Variable rewards more than DOUBLE 30-day retention.
 
@@ -469,18 +514,22 @@ getRewardMessage(1, 44);
 ### Tone and Voice
 
 **Bill Campbell Style (Warm + Direct):**
+
 - ✅ "You're on fire! Keep that momentum going."
 - ❌ "Entry successfully saved to database."
 
 **Active Voice:**
+
 - ✅ "You know what matters."
 - ❌ "Priorities have been identified."
 
 **Energy-Focused:**
+
 - ✅ "That's the energy! Let's build on this."
 - ❌ "Your entry has been processed."
 
 **Specific, Not Generic:**
+
 - ✅ "Powerful priorities." (references what they just did)
 - ❌ "Good job!" (could apply to anything)
 
@@ -489,19 +538,23 @@ getRewardMessage(1, 44);
 ### What NOT to Do
 
 **Avoid Corporate-Speak:**
+
 - ❌ "Your entry has been successfully saved to the system."
 - ❌ "Thank you for using Command Center."
 - ❌ "Your data is now secure."
 
 **Avoid Over-the-Top Praise:**
+
 - ❌ "OMG YOU'RE AMAZING!!! 🤩🤩🤩"
 - ❌ "BEST ENTRY EVER!!!"
 
 **Avoid Passive Voice:**
+
 - ❌ "The morning ritual was completed."
 - ❌ "Your habits have been tracked."
 
 **Avoid Repetition:**
+
 - ❌ "Great job! 👍" (7 times in a row)
 
 ---
@@ -514,15 +567,15 @@ getRewardMessage(1, 44);
 
 ```typescript
 interface UserPreferences {
-  favoriteEmojis: string[];  // ['🔥', '🚀', '💪']
-  preferredTone: 'warm' | 'direct' | 'playful';
-  celebrationStyle: 'subtle' | 'enthusiastic';
+  favoriteEmojis: string[]; // ['🔥', '🚀', '💪']
+  preferredTone: "warm" | "direct" | "playful";
+  celebrationStyle: "subtle" | "enthusiastic";
 }
 
 function getPersonalizedReward(streak: number, prefs: UserPreferences) {
   // Filter messages by tone
   const filteredMessages = COMPLETION_MESSAGES.filter(
-    msg => msg.tone === prefs.preferredTone
+    (msg) => msg.tone === prefs.preferredTone,
   );
 
   // Select random from filtered set
@@ -555,11 +608,13 @@ function getSocialReward(streak: number, userPercentile: number) {
 ```
 
 **Benefits:**
+
 - Social proof drives motivation
 - Gamification without explicit leaderboard
 - Works for competitive personalities
 
 **Risks:**
+
 - May demotivate lower-percentile users
 - Requires critical mass of users
 - Privacy concerns (who wants to be compared?)
@@ -574,18 +629,18 @@ function getSocialReward(streak: number, userPercentile: number) {
 function getContextualReward(
   streak: number,
   context: {
-    timeOfDay: 'morning' | 'evening';
-    energyLevel: 'high' | 'medium' | 'low';
-    dealPressure: 'high' | 'normal';
-  }
+    timeOfDay: "morning" | "evening";
+    energyLevel: "high" | "medium" | "low";
+    dealPressure: "high" | "normal";
+  },
 ) {
   // Morning + Low energy
-  if (context.timeOfDay === 'morning' && context.energyLevel === 'low') {
+  if (context.timeOfDay === "morning" && context.energyLevel === "low") {
     return "You showed up even when tired. That's real discipline. 💪";
   }
 
   // Evening + High deal pressure
-  if (context.timeOfDay === 'evening' && context.dealPressure === 'high') {
+  if (context.timeOfDay === "evening" && context.dealPressure === "high") {
     return "Tough day, but you still reflected. That clarity will pay off. 🎯";
   }
 
@@ -601,29 +656,29 @@ function getContextualReward(
 ### Unit Tests
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { getRewardMessage, getNextMilestone } from './variable-rewards';
+import { describe, it, expect } from "vitest";
+import { getRewardMessage, getNextMilestone } from "./variable-rewards";
 
-describe('Variable Rewards', () => {
-  it('should return milestone reward at exact milestone', () => {
+describe("Variable Rewards", () => {
+  it("should return milestone reward at exact milestone", () => {
     const reward = getRewardMessage(7);
-    expect(reward.content).toContain('7-DAY STREAK');
-    expect(reward.emoji).toBe('🏆');
+    expect(reward.content).toContain("7-DAY STREAK");
+    expect(reward.emoji).toBe("🏆");
   });
 
-  it('should return recovery message for broken streak', () => {
+  it("should return recovery message for broken streak", () => {
     const reward = getRewardMessage(1, 44);
-    expect(reward.content).toContain('44-day streak');
+    expect(reward.content).toContain("44-day streak");
     expect(reward.content).toContain("doesn't erase");
   });
 
-  it('should return random completion message by default', () => {
+  it("should return random completion message by default", () => {
     const reward = getRewardMessage(5);
     expect(reward.content.length).toBeGreaterThan(0);
     expect(reward.emoji).toBeDefined();
   });
 
-  it('should calculate next milestone correctly', () => {
+  it("should calculate next milestone correctly", () => {
     expect(getNextMilestone(3)).toEqual({ days: 4, milestone: 7 });
     expect(getNextMilestone(25)).toEqual({ days: 5, milestone: 30 });
     expect(getNextMilestone(150)).toEqual({ days: 50, milestone: 200 });

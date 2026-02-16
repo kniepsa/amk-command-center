@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { toast } from '$lib/stores/toast.svelte';
+
 	type Props = {
 		onComplete: (data: { grateful: string; excited: string; priorities: string[] }) => void;
 	};
@@ -27,13 +29,19 @@
 	function handleStart() {
 		if (!canStart) return;
 
-		onComplete({
+		const data = {
 			grateful: grateful.trim(),
 			excited: excited.trim() || 'Starting my day with intention',
 			priorities: quickMode
 				? [priority1.trim()]
 				: [priority1.trim(), priority2.trim(), priority3.trim()]
-		});
+		};
+
+		onComplete(data);
+
+		// Success feedback
+		const priorityText = quickMode ? priority1.trim() : `${data.priorities.length} priorities`;
+		toast.success(`Day planned! ✨ Grateful for "${data.grateful}", Priority: ${priorityText}`);
 	}
 
 	function toggleMode() {
@@ -150,7 +158,7 @@
 		<button
 			onclick={handleStart}
 			disabled={!canStart}
-			class="w-full px-6 py-4 bg-electric-500 active:bg-electric-600 md:hover:bg-electric-600 disabled:bg-cloud-200 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed text-base md:text-lg min-h-touch-comfortable"
+			class="w-full px-6 py-4 bg-electric-600 active:bg-electric-700 md:hover:bg-electric-700 disabled:bg-cloud-200 text-white font-semibold rounded-xl transition-all disabled:cursor-not-allowed text-base md:text-lg min-h-touch-comfortable shadow-md"
 		>
 			{quickMode ? 'Start Day ⚡' : 'Start Day →'}
 		</button>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getWeekNumber } from '$lib/utils/metrics';
 	import { MAX_WEEKLY_PRIORITIES } from '$lib/utils/constants';
+	import { toast } from '$lib/stores/toast.svelte';
 
 	interface Task {
 		id: string;
@@ -58,7 +59,9 @@
 			created: new Date().toISOString()
 		};
 		console.log('Weekly Plan:', plan);
-		alert('Weekly plan saved! (Console logged for now)');
+
+		// Success feedback
+		toast.success(`Your week is focused! 🎯 ${priorityCount} priorities locked in.`);
 	}
 </script>
 

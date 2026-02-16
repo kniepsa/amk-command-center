@@ -1,0 +1,222 @@
+
+> amk-command-center@0.0.1 dev
+> vite dev
+
+Port 5173 is in use, trying another one...
+Port 5174 is in use, trying another one...
+Port 5175 is in use, trying another one...
+Port 5176 is in use, trying another one...
+Port 5177 is in use, trying another one...
+Port 5178 is in use, trying another one...
+Port 5179 is in use, trying another one...
+
+  VITE v6.4.1  ready in 595 ms
+
+  ➜  Local:   http://localhost:5180/
+  ➜  Network: use --host to expose
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:14:22 This reference only captures the initial value of `extraction`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:15:23 This reference only captures the initial value of `extraction`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:16:27 This reference only captures the initial value of `extraction`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:17:21 This reference only captures the initial value of `extraction`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:18:35 This reference only captures the initial value of `extraction`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:70:7 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/ExtractionPreview.svelte:78:7 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:49:1 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:49:1 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:50:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:50:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/MorningRitual.svelte:74:4 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/MorningRitual.svelte:87:4 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/MorningRitual.svelte:105:4 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/MorningRitual.svelte:118:4 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/MorningRitual.svelte:131:4 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:17:22 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:18:19 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:19:22 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:20:33 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:21:25 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:22:27 This reference only captures the initial value of `task`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:209:0 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:209:0 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:213:1 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:213:1 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/TaskManagementModal.svelte:247:5 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+12:26:31 PM [vite-plugin-svelte] src/lib/components/CRMTab.svelte:185:4 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/CRMTab.svelte:185:4 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/GlobalSearch.svelte:173:3 The attribute 'aria-expanded' is not supported by the role 'textbox'. This role is implicit on the element `<input>`
+https://svelte.dev/e/a11y_role_supports_aria_props_implicit
+12:26:31 PM [vite-plugin-svelte] src/lib/components/KeyboardShortcutsModal.svelte:18:1 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+12:26:31 PM [vite-plugin-svelte] src/lib/components/KeyboardShortcutsModal.svelte:18:1 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+12:26:31 PM [vite-plugin-svelte] src/lib/components/GlobalSearch.svelte:173:3 The attribute 'aria-expanded' is not supported by the role 'textbox'. This role is implicit on the element `<input>`
+https://svelte.dev/e/a11y_role_supports_aria_props_implicit
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:49:1 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:49:1 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:50:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+12:26:31 PM [vite-plugin-svelte] src/lib/components/IOSInstallPrompt.svelte:50:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+12:26:31 PM [vite-plugin-svelte] src/lib/components/KeyboardShortcutsModal.svelte:18:1 Elements with the 'dialog' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus
+12:26:31 PM [vite-plugin-svelte] src/lib/components/KeyboardShortcutsModal.svelte:18:1 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[404] GET /daily[0m
+
+[1;31m[404] GET /urgent[0m
+
+[1;31m[404] GET /people[0m
+
+[1;31m[404] GET /metrics[0m
+12:27:17 PM [vite-plugin-svelte] src/routes/login/+page.svelte:53:6 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+12:27:17 PM [vite-plugin-svelte] src/routes/login/+page.svelte:53:6 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+
+[1;31m[500] GET /[0m
+TypeError: Cannot read properties of undefined (reading 'length')
+    at /Users/amk/Projects/amk-command-center/src/lib/components/WeeklyPrioritiesSidebar.svelte:47:24
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at WeeklyPrioritiesSidebar (src/lib/components/WeeklyPrioritiesSidebar.svelte:10:13)
+    at eval (src/lib/components/PlanTab.svelte:84:37)
+    at Renderer.child (node_modules/svelte/src/internal/server/renderer.js:201:18)
+    at Renderer.component (node_modules/svelte/src/internal/server/renderer.js:226:22)
+    at PlanTab (src/lib/components/PlanTab.svelte:15:13)
+    at eval (src/routes/+page.svelte:185:37)
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/9.js
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+12:27:54 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+12:27:54 PM [vite] (client) page reload .svelte-kit/generated/root.js
+12:27:54 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+Port 5174 is in use, trying another one...
+Port 5175 is in use, trying another one...
+Port 5176 is in use, trying another one...
+Port 5177 is in use, trying another one...
+Port 5178 is in use, trying another one...
+Port 5179 is in use, trying another one...
+Port 5180 is in use, trying another one...
+
+  VITE v6.4.1  ready in 956 ms
+
+  ➜  Local:   http://localhost:5181/
+  ➜  Network: use --host to expose

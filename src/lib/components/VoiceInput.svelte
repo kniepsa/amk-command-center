@@ -2,6 +2,7 @@
 	import Button from './shared/Button.svelte';
 	import MissingDataFeedback from './MissingDataFeedback.svelte';
 	import { extractEntryData, type ExtractedData, type ExtractionResult } from '$lib/api/journal-client';
+	import { api } from '$lib/api/client';
 
 	interface Props {
 		onSave?: (extracted: ExtractedData) => void;
@@ -116,38 +117,8 @@
 				throw new Error('You are offline. Transcription requires internet connection.');
 			}
 
-			// Create form data
-			const formData = new FormData();
-			formData.append('audio', audioBlob, 'recording.webm');
-
-			// Upload to transcription endpoint (still using Replicate for now)
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
-
-			const response = await fetch('/api/transcribe', {
-				method: 'POST',
-				body: formData,
-				signal: controller.signal
-			});
-
-			clearTimeout(timeoutId);
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-
-				// Handle specific errors
-				if (response.status === 504) {
-					throw new Error('Transcription timeout. Your audio may be too long (max 60 seconds).');
-				} else if (response.status === 429) {
-					throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-				} else if (response.status === 401) {
-					throw new Error('API key invalid. Please contact support.');
-				}
-
-				throw new Error(errorData.message || `Transcription failed: ${response.status}`);
-			}
-
-			const result = await response.json();
+			// Use SDK instead of direct fetch
+			const result = await api.voice.transcribe(audioBlob);
 
 			if (result.error) {
 				throw new Error(result.error);

@@ -1,4 +1,5 @@
 # Command Center Timeline Architecture
+
 **Date**: 2026-02-16
 **Status**: Strategic Planning
 
@@ -34,13 +35,14 @@ await log({
   customer: customer.name,
   message: "Found profile: https://...",
   profileUrl,
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 
 // Stored in: logs/batch-feb10-log.json
 ```
 
 **Key Insights**:
+
 - ✅ Every action timestamped
 - ✅ Structured log entries (action, entity, message)
 - ✅ File-based persistence (simple, no DB needed)
@@ -67,37 +69,38 @@ Sales Lesson      Daily AI           Future Reminder
 
 ```typescript
 interface TimelineEntry {
-  id: string;                    // UUID
-  timestamp: string;              // ISO 8601
+  id: string; // UUID
+  timestamp: string; // ISO 8601
   type: "journal" | "task" | "crm" | "learning" | "calendar" | "habit";
   status: "planned" | "active" | "completed" | "missed";
 
   // Entity reference
   entity: {
-    id: string;                   // e.g., "buyer_leon", "task_123"
-    name: string;                 // "Leon Welcher", "Call Peter"
+    id: string; // e.g., "buyer_leon", "task_123"
+    name: string; // "Leon Welcher", "Call Peter"
     workspace: "amk" | "ma";
   };
 
   // Content
-  title: string;                  // "Morning Ritual completed"
-  description?: string;           // Full text
+  title: string; // "Morning Ritual completed"
+  description?: string; // Full text
   metadata?: Record<string, any>; // Flexible data
 
   // Time context
-  scheduledFor?: string;          // Future events
-  completedAt?: string;           // Past events
-  duration?: number;              // Milliseconds
+  scheduledFor?: string; // Future events
+  completedAt?: string; // Past events
+  duration?: number; // Milliseconds
 
   // Relationships
-  relatedEntries?: string[];      // Link to other timeline entries
-  tags?: string[];                // ["@leon", "#m-a", "[[spin-selling]]"]
+  relatedEntries?: string[]; // Link to other timeline entries
+  tags?: string[]; // ["@leon", "#m-a", "[[spin-selling]]"]
 }
 ```
 
 ### Storage Strategy
 
 **Option 1: Append-Only Log** (like Growth Engine)
+
 - ✅ Simple: `timeline.jsonl` (newline-delimited JSON)
 - ✅ Fast writes (append only)
 - ✅ Easy backup/sync
@@ -105,6 +108,7 @@ interface TimelineEntry {
 - ❌ No indexing
 
 **Option 2: SQLite Timeline Table** (recommended)
+
 - ✅ Fast search with indexes
 - ✅ Complex queries ("show all Leon interactions")
 - ✅ Already using SQLite for backend
@@ -170,6 +174,7 @@ CREATE INDEX idx_timeline_scheduled ON timeline(scheduled_for) WHERE scheduled_f
 ```
 
 **Features**:
+
 - Group by day/week/month
 - Filter by type (tasks, calls, habits)
 - Search full-text + entity names
@@ -206,6 +211,7 @@ CREATE INDEX idx_timeline_scheduled ON timeline(scheduled_for) WHERE scheduled_f
 ```
 
 **Features**:
+
 - Google Calendar sync (read-only initially)
 - Upcoming tasks from `next.md`
 - Weekly/monthly goals
@@ -278,12 +284,12 @@ Use existing Google Calendar MCP:
 ```typescript
 // Backend cron job (every 15 minutes)
 const events = await googleCalendar.listEvents({
-  calendarId: 'primary',
+  calendarId: "primary",
   timeMin: new Date().toISOString(),
   timeMax: add(new Date(), { days: 30 }).toISOString(),
   maxResults: 100,
   singleEvents: true,
-  orderBy: 'startTime'
+  orderBy: "startTime",
 });
 
 // Insert into timeline table
@@ -291,8 +297,8 @@ for (const event of events) {
   await db.timeline.upsert({
     id: `calendar_${event.id}`,
     timestamp: event.start.dateTime,
-    type: 'calendar',
-    status: 'planned',
+    type: "calendar",
+    status: "planned",
     entity_id: event.id,
     entity_name: event.summary,
     title: event.summary,
@@ -300,13 +306,13 @@ for (const event of events) {
     scheduled_for: event.start.dateTime,
     duration: differenceInMilliseconds(
       new Date(event.end.dateTime),
-      new Date(event.start.dateTime)
+      new Date(event.start.dateTime),
     ),
     metadata: JSON.stringify({
       location: event.location,
       attendees: event.attendees,
-      hangoutLink: event.hangoutLink
-    })
+      hangoutLink: event.hangoutLink,
+    }),
   });
 }
 ```
@@ -324,6 +330,7 @@ for (const event of events) {
 ### Week 1: Backend Timeline API
 
 **Day 1-2**: Database schema + migrations
+
 ```bash
 .claude/api/db/migrations/0009_create_timeline.sql
 .claude/api/services/timeline-service.ts
@@ -331,15 +338,17 @@ for (const event of events) {
 ```
 
 **Day 3-4**: Populate timeline from existing data
+
 ```typescript
 // Migrate existing entries to timeline
-await migrateJournalEntries();    // users/amk/entries/*.md
-await migrateTaskCompletions();   // next.md history
-await migrateCRMInteractions();   // people/*.md
-await migrateHabitStreaks();      // habits tracking
+await migrateJournalEntries(); // users/amk/entries/*.md
+await migrateTaskCompletions(); // next.md history
+await migrateCRMInteractions(); // people/*.md
+await migrateHabitStreaks(); // habits tracking
 ```
 
 **Day 5**: Calendar sync cron job
+
 ```bash
 .claude/api/jobs/sync-calendar.ts
 # Run every 15 minutes via node-cron
@@ -348,6 +357,7 @@ await migrateHabitStreaks();      // habits tracking
 ### Week 2: Frontend Timeline UI
 
 **Day 1-2**: Past Tab
+
 ```bash
 src/routes/past/+page.svelte
 src/lib/components/TimelineEntry.svelte
@@ -355,6 +365,7 @@ src/lib/components/TimelineSearch.svelte
 ```
 
 **Day 3-4**: Future Tab
+
 ```bash
 src/routes/future/+page.svelte
 src/lib/components/CalendarView.svelte
@@ -362,6 +373,7 @@ src/lib/components/UpcomingTasks.svelte
 ```
 
 **Day 5**: Search integration
+
 ```bash
 src/lib/services/timeline-search.ts
 src/lib/components/GlobalSearch.svelte  # Header search bar
@@ -370,6 +382,7 @@ src/lib/components/GlobalSearch.svelte  # Header search bar
 ### Week 3: Polish + Voice Integration
 
 **Day 1-2**: Voice commands for timeline
+
 ```
 "Show me all interactions with Leon"
 → Search timeline for "@leon"
@@ -382,6 +395,7 @@ src/lib/components/GlobalSearch.svelte  # Header search bar
 ```
 
 **Day 3-5**: Testing + refinement
+
 - Performance testing (10K+ timeline entries)
 - Search relevance tuning
 - Mobile responsive timeline
@@ -393,14 +407,14 @@ src/lib/components/GlobalSearch.svelte  # Header search bar
 
 ### Why SQLite over append-only log?
 
-| Factor | SQLite | Append-Only Log |
-|--------|--------|-----------------|
-| **Search speed** | Fast (indexed) | Slow (linear scan) |
-| **Filtering** | SQL WHERE clauses | Manual iteration |
-| **Pagination** | Built-in LIMIT/OFFSET | Manual slicing |
-| **Updates** | Easy (UPDATE) | Append correction entries |
-| **Complexity** | Medium | Low |
-| **Backup** | Single file | Single file |
+| Factor           | SQLite                | Append-Only Log           |
+| ---------------- | --------------------- | ------------------------- |
+| **Search speed** | Fast (indexed)        | Slow (linear scan)        |
+| **Filtering**    | SQL WHERE clauses     | Manual iteration          |
+| **Pagination**   | Built-in LIMIT/OFFSET | Manual slicing            |
+| **Updates**      | Easy (UPDATE)         | Append correction entries |
+| **Complexity**   | Medium                | Low                       |
+| **Backup**       | Single file           | Single file               |
 
 **Verdict**: SQLite wins for search performance. Timeline will have 1000s of entries.
 
@@ -439,7 +453,7 @@ Current voice extraction quality inconsistent compared to M&A Hub.
 
 ```typescript
 // Detect context from current view
-if (currentTab === 'crm') {
+if (currentTab === "crm") {
   // CRM-focused extraction
   prompt = `Extract CRM information:
     - Person name (e.g., "@leon")
@@ -449,7 +463,7 @@ if (currentTab === 'crm') {
     - Next steps
     - Sentiment (positive/neutral/negative)
   `;
-} else if (currentTab === 'tasks') {
+} else if (currentTab === "tasks") {
   // Task-focused extraction
   prompt = `Extract task information:
     - Task description
@@ -482,7 +496,7 @@ if (currentTab === 'crm') {
 ---
 
 **Questions for User**:
+
 1. Does this match your "historic log + planned + calendar + search" vision?
 2. Priority order: Timeline backend first OR voice enhancement first?
 3. Should calendar sync start with Google Calendar or include other calendars (Outlook)?
-

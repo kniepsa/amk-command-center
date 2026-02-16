@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { getApiClient } from '$lib/api-client';
 	import { navigateToEntity, parseShowCommand } from '$lib/utils/deep-link';
+	import { toast } from '$lib/stores/toast.svelte';
 	import type { SearchResult } from '@amk/command-center-sdk';
 
 	type Props = {
@@ -64,6 +65,8 @@
 			isOpen = results.length > 0;
 		} catch (error) {
 			console.error('[GlobalSearch] Search failed:', error);
+			const message = error instanceof Error ? error.message : 'Search failed';
+			toast.error(`Search failed: ${message}`);
 			results = [];
 		} finally {
 			isSearching = false;

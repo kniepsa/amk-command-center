@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { BRAND } from '$lib/brand';
+	import { api } from '$lib/api/client';
+	import { browser } from '$app/environment';
 
 	type Priority = {
 		id: string;
@@ -8,12 +10,30 @@
 		total_days: number;
 	};
 
-	type Props = {
-		priorities: Priority[];
-		isLoading?: boolean;
-	};
+	let priorities = $state<Priority[]>([]);
+	let isLoading = $state(true);
+	let mounted = $state(false);
 
-	let { priorities, isLoading = false }: Props = $props();
+	$effect(() => {
+		if (!browser || mounted) return;
+
+		mounted = true;
+		loadPriorities();
+	});
+
+	async function loadPriorities() {
+		isLoading = true;
+
+		try {
+			const result = await api.weekly.getCurrent();
+			priorities = result.priorities || [];
+		} catch (error) {
+			console.error('Error loading priorities:', error);
+			priorities = [];
+		} finally {
+			isLoading = false;
+		}
+	}
 
 	// Calculate progress percentage
 	function getProgress(priority: Priority): number {
@@ -44,7 +64,7 @@
 				<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-electric-500"></div>
 				<p class="text-cloud-400 text-sm mt-2">Loading priorities...</p>
 			</div>
-		{:else if priorities.length === 0}
+		{:else if !priorities || priorities.length === 0}
 			<div class="text-center py-8">
 				<p class="text-cloud-400 text-sm">No priorities set for this week</p>
 			</div>

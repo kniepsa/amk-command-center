@@ -3,6 +3,10 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { recordAction } from '$lib/stores/action-history.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
+	import { api } from '$lib/api/client';
+	import TaskManagementModal from './TaskManagementModal.svelte';
+	import type { UrgentTasksResponse, Task } from '@amk/command-center-sdk';
 
 	interface UrgentItem {
 		id: string;
@@ -23,6 +27,11 @@
 	let mounted = $state(false);
 	let showAll = $state(false);
 
+	// Modal state
+	let showModal = $state(false);
+	let modalMode = $state<'create' | 'edit'>('create');
+	let selectedTask = $state<Task | undefined>(undefined);
+
 	$effect(() => {
 		if (!browser || mounted) return;
 
@@ -41,59 +50,13 @@
 		error = null;
 
 		try {
-			// Fetch from secure server-side proxy endpoint
-			const response = await fetch('/api/urgent');
-
-			if (response.ok) {
-				urgentData = await response.json();
-			} else {
-				// Mock data for testing
-				urgentData = {
-					urgent_items: [
-						{
-							id: '1',
-							text: 'Follow up with Leon on Peters Paper partnership',
-							context: '@phone',
-							priority: 'high' as const,
-							due_date: '2026-02-14',
-							status: 'pending' as const
-						},
-						{
-							id: '2',
-							text: 'Review Printulu M&A deck for Colin (Lithotech)',
-							context: '@computer',
-							priority: 'high' as const,
-							due_date: '2026-02-13',
-							status: 'pending' as const
-						},
-						{
-							id: '3',
-							text: 'Send Omar TechTulu partnership proposal',
-							context: '@email',
-							priority: 'high' as const,
-							due_date: '2026-02-15',
-							status: 'pending' as const
-						},
-						{
-							id: '4',
-							text: 'Call Jerome about Webprinter brand acquisition',
-							context: '@phone',
-							priority: 'medium' as const,
-							status: 'waiting' as const
-						},
-						{
-							id: '5',
-							text: 'Update HABITS.md with new sauna streak',
-							context: '@computer',
-							priority: 'low' as const,
-							status: 'pending' as const
-						}
-					]
-				};
-			}
+			// Use SDK instead of direct fetch
+			const data = await api.tasks.getUrgent();
+			urgentData = data;
 		} catch (err) {
 			console.error('Error loading urgent items:', err);
-			// Mock data on error too
+			error = err instanceof Error ? err.message : 'Failed to load urgent items';
+			// Mock data on error for development
 			urgentData = {
 				urgent_items: [
 					{
@@ -159,7 +122,7 @@
 		};
 
 		recordAction({
-			type: 'task-status',
+			type: 'task-complete',
 			description: `Task "${itemText.substring(0, 30)}..." ${statusEmoji[newStatus]} ${newStatus}`,
 			reverseAction: async () => {
 				// Restore previous state
@@ -168,12 +131,12 @@
 					urgentData = { ...urgentData };
 				}
 
-				// Call API to revert
-				await fetch(`/api/urgent/${itemId}`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ status: previousStatus })
-				});
+				// Call SDK to revert
+				try {
+					await api.tasks.updateStatus(itemId, { status: previousStatus });
+				} catch (err) {
+					console.error('Failed to revert task status:', err);
+				}
 			},
 			data: {
 				itemId,
@@ -183,22 +146,61 @@
 			}
 		});
 
-		// Send to API
+		// Send to API via SDK
 		try {
-			const response = await fetch(`/api/urgent/${itemId}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status: newStatus })
-			});
+			await api.tasks.updateStatus(itemId, { status: newStatus });
 
-			if (!response.ok) {
-				// Revert on error
-				item.status = previousStatus;
-				urgentData = { ...urgentData };
+			// Success feedback
+			if (newStatus === 'done') {
+				toast.success(`Nice! ✨ "${itemText.substring(0, 40)}..." is done. Say "undo" to reverse.`);
+			} else if (newStatus === 'waiting') {
+				toast.success(`Task paused ⏸️ Will remind you tomorrow.`);
 			}
 		} catch (err) {
 			console.error('Failed to update task status:', err);
+			toast.error('Failed to update task. Please try again.');
+			// Revert on error
+			item.status = previousStatus;
+			urgentData = { ...urgentData };
 		}
+	}
+
+	function openCreateModal() {
+		modalMode = 'create';
+		selectedTask = undefined;
+		showModal = true;
+	}
+
+	function openEditModal(itemId: string) {
+		// Find the item
+		const item = urgentData?.urgent_items.find(i => i.id === itemId);
+		if (!item) return;
+
+		// Convert UrgentItem to Task format
+		selectedTask = {
+			id: item.id,
+			workspaceId: 'amk',
+			userId: 'amk',
+			content: item.text,
+			context: item.context.replace('@', ''),
+			status: item.status === 'done' ? 'resolved' : item.status === 'waiting' ? 'waiting' : 'open',
+			reminderDate: item.due_date,
+			createdAt: new Date().toISOString()
+		} as Task;
+
+		modalMode = 'edit';
+		showModal = true;
+	}
+
+	function handleModalSuccess(task: Task) {
+		// Reload urgent items
+		loadUrgentItems();
+		showModal = false;
+	}
+
+	function handleModalClose() {
+		showModal = false;
+		selectedTask = undefined;
 	}
 </script>
 
@@ -226,6 +228,13 @@
 		<div class="bg-white rounded-lg border border-cloud-200 p-6">
 			<div class="flex items-center justify-between mb-4">
 				<h3 class="text-base font-medium text-cloud-600">Urgent ({showAll ? urgentData.urgent_items.length : visibleItems().length})</h3>
+				<button
+					onclick={openCreateModal}
+					class="px-3 py-1.5 text-sm font-medium bg-electric-500 text-white rounded-lg hover:bg-electric-600 transition-colors"
+					title="Add new task"
+				>
+					+ Add Task
+				</button>
 			</div>
 
 			<div class="space-y-2">
@@ -261,6 +270,16 @@
 
 						<!-- Quick Actions -->
 						<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							<button
+								onclick={(e) => {
+									e.stopPropagation();
+									openEditModal(item.id);
+								}}
+								class="p-1 text-xs text-cloud-400 hover:text-electric-600"
+								title="Edit task"
+							>
+								✏️
+							</button>
 							{#if item.status !== 'waiting'}
 								<button
 									onclick={(e) => {
@@ -303,6 +322,21 @@
 		<div class="bg-white border border-cloud-200 rounded-lg p-8 text-center">
 			<p class="text-cloud-600 font-medium">All caught up! ✨</p>
 			<p class="text-cloud-400 text-sm mt-2">No urgent items for today</p>
+			<button
+				onclick={openCreateModal}
+				class="mt-4 px-4 py-2 text-sm font-medium bg-electric-500 text-white rounded-lg hover:bg-electric-600 transition-colors"
+			>
+				+ Add Task
+			</button>
 		</div>
 	{/if}
 </div>
+
+{#if showModal}
+	<TaskManagementModal
+		mode={modalMode}
+		task={selectedTask}
+		onClose={handleModalClose}
+		onSuccess={handleModalSuccess}
+	/>
+{/if}

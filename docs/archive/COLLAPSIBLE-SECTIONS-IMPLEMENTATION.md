@@ -12,11 +12,13 @@ Implemented collapsible sections on the Command Center home page (Today tab) tha
 ### 1. Daily AI Section (`TodayTab.svelte`)
 
 **Auto-collapse triggers**:
+
 - Energy level logged
 - At least 1 intention set
 - At least 1 gratitude entry captured
 
 **Features**:
+
 - Auto-collapses when all fields complete
 - Shows "✓ Daily AI Complete" collapsed state
 - Displays summary: "Energy logged, intentions set, gratitude captured"
@@ -28,27 +30,32 @@ Implemented collapsible sections on the Command Center home page (Today tab) tha
 ### 2. Sales Learning Section (`LearningSession.svelte`)
 
 **Auto-collapse triggers**:
+
 - User clicks "Mark Complete & Continue" button
 - Completion state saved to localStorage per day/course
 
 **Features**:
+
 - Auto-collapses when day's lesson marked complete
 - Shows "✓ [Course Name] - Day X Complete" with lesson title
 - Expand button to review completed lesson
 - State persisted to localStorage (`learningExpanded` + per-lesson completion)
 
 **Code locations**:
+
 - `/Users/amk/Projects/amk-command-center/src/lib/components/LearningSession.svelte`
 - `/Users/amk/Projects/amk-command-center/src/lib/components/ChatInterface.svelte`
 
 ## User Experience
 
 ### Before Completion
+
 - Both sections fully expanded
 - User can interact with all controls
 - Normal workflow
 
 ### After Completion
+
 - Section auto-collapses with success indicator (✓)
 - Minimal collapsed card shows:
   - Green checkmark
@@ -58,6 +65,7 @@ Implemented collapsible sections on the Command Center home page (Today tab) tha
 - Collapse button appears in expanded header to manually collapse
 
 ### Visual Design
+
 - Collapsed state: Light blue background (`#f0f9ff`)
 - Dashed blue border (`#3b82f6`)
 - Hover effect: Darker blue background
@@ -67,11 +75,13 @@ Implemented collapsible sections on the Command Center home page (Today tab) tha
 ## State Persistence
 
 ### localStorage Keys
+
 1. `dailyAIExpanded`: boolean (true/false)
 2. `learningExpanded`: boolean (true/false)
 3. `lesson-complete-{courseId}-day-{dayNumber}`: boolean (per lesson)
 
 ### Behavior
+
 - State loads on component mount
 - State saves on toggle
 - Auto-collapse saves immediately when conditions met
@@ -80,6 +90,7 @@ Implemented collapsible sections on the Command Center home page (Today tab) tha
 ## Progressive Disclosure Principle
 
 Follows Joe Gebbia's UX framework:
+
 1. **Essential first**: Show incomplete sections
 2. **Friction-aware**: Minimize decisions (auto-collapse)
 3. **Trust through transparency**: Clear completion indicators
@@ -88,6 +99,7 @@ Follows Joe Gebbia's UX framework:
 ## Technical Details
 
 ### Props Interface (`LearningSession.svelte`)
+
 ```typescript
 interface Props {
   expanded?: boolean;
@@ -96,15 +108,17 @@ interface Props {
 ```
 
 ### Derived State (`TodayTab.svelte`)
+
 ```typescript
 let dailyAIComplete = $derived(
   extractedData.energy &&
-  extractedData.intentions?.length > 0 &&
-  extractedData.gratitude?.length >= 1
+    extractedData.intentions?.length > 0 &&
+    extractedData.gratitude?.length >= 1,
 );
 ```
 
 ### Effects
+
 - Load saved state from localStorage on mount
 - Auto-collapse when completion detected
 - Persist state changes to localStorage

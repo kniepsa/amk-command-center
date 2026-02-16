@@ -15,10 +15,9 @@
 		messages: Message[];
 		onSubmit: (content: string) => void;
 		isLoading?: boolean;
-		onVoiceClick?: () => void;
 	};
 
-	let { messages, onSubmit, isLoading = false, onVoiceClick }: Props = $props();
+	let { messages, onSubmit, isLoading = false }: Props = $props();
 
 	let currentInput = $state('');
 	let chatContainer: HTMLDivElement;
@@ -75,35 +74,16 @@
 	<!-- Messages Area -->
 	<div bind:this={chatContainer} class="flex-1 overflow-y-auto p-6 space-y-6">
 		{#if messages.length === 0}
-			<!-- Empty State: Learning Session OR Voice -->
+			<!-- Empty State: Learning Session -->
 			{#if showLearningInEmpty}
 				<div class="space-y-4">
-					<!-- Voice Button (compact, top-right) -->
-					{#if onVoiceClick}
-						<div class="flex justify-end">
-							<button
-								onclick={onVoiceClick}
-								class="w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-								title="Start voice recording"
-							>
-							</button>
-						</div>
-					{/if}
-
 					<!-- Learning Session -->
 					<LearningSession expanded={learningExpanded} onToggle={handleLearningToggle} />
 				</div>
 			{:else}
-				<!-- Fallback: Just Green Circle -->
+				<!-- Fallback: Empty chat state -->
 				<div class="flex items-center justify-center h-full min-h-[400px]">
-					{#if onVoiceClick}
-						<button
-							onclick={onVoiceClick}
-							class="w-20 h-20 bg-green-500 hover:bg-green-600 rounded-full transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-							title="Start recording"
-						>
-						</button>
-					{/if}
+					<p class="text-cloud-400 text-sm">Start typing or use voice to begin...</p>
 				</div>
 			{/if}
 		{:else}

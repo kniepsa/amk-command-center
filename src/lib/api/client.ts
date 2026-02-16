@@ -8,7 +8,8 @@
 import { CommandCenterClient } from "@amk/command-center-sdk";
 
 // Get API configuration from environment variables
-const API_URL = import.meta.env.VITE_JOURNAL_API_URL || "http://localhost:3002/api/v1";
+const API_URL =
+  import.meta.env.VITE_JOURNAL_API_URL || "http://localhost:3002/api/v1";
 const API_KEY = import.meta.env.VITE_JOURNAL_API_KEY;
 
 // Initialize the Command Center API client

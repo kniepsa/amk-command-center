@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { recordAction } from '$lib/stores/action-history.svelte';
+	import { api } from '$lib/api/client';
 
 	interface HabitStreak {
 		id: string;
@@ -28,25 +29,35 @@
 	async function loadStreaks() {
 		isLoading = true;
 		try {
-			const response = await fetch('/api/habits/streaks');
+			// Use SDK instead of direct fetch
+			const data = await api.habits.getStreaks();
 
-			if (response.ok) {
-				const data = await response.json();
-				streaks = data.streaks || [];
-			} else {
-				// Mock data - All AMK habits from HABITS.md
-				streaks = [
-					// Daily Non-Negotiable
-					{
-						id: 'journaling',
-						name: 'Journaling',
-						icon: '📝',
-						description: 'Daily entry - system requires data',
-						frequency: 'Daily',
-						current_streak: 44, // Every day of 2026 so far (Feb 13 = day 44)
-						best_streak: 44,
-						completed_today: true
-					},
+			// Map SDK response to component format
+			streaks = data.habits.map(habit => ({
+				id: habit.id,
+				name: habit.name,
+				icon: habit.icon,
+				current_streak: habit.currentStreak,
+				best_streak: habit.longestStreak,
+				completed_today: habit.lastCompleted === new Date().toISOString().split('T')[0],
+				description: undefined, // Backend doesn't return this yet
+				frequency: undefined // Backend doesn't return this yet
+			}));
+		} catch (error) {
+			console.error('Error loading habit streaks:', error);
+			// Mock data - All AMK habits from HABITS.md
+			streaks = [
+				// Daily Non-Negotiable
+				{
+					id: 'journaling',
+					name: 'Journaling',
+					icon: '📝',
+					description: 'Daily entry - system requires data',
+					frequency: 'Daily',
+					current_streak: 44, // Every day of 2026 so far (Feb 13 = day 44)
+					best_streak: 44,
+					completed_today: true
+				},
 					{
 						id: 'three_daily_happiness',
 						name: '3 Good Things',
@@ -139,36 +150,6 @@
 						completed_today: false
 					}
 				];
-			}
-		} catch (error) {
-			console.error('Error loading habit streaks:', error);
-			// Mock data on error - Top 3 habits
-			streaks = [
-				{
-					id: 'journaling',
-					name: 'Journaling',
-					icon: '📝',
-					current_streak: 44,
-					best_streak: 44,
-					completed_today: true
-				},
-				{
-					id: 'three_daily_happiness',
-					name: '3 Good Things',
-					icon: '🙏',
-					current_streak: 44,
-					best_streak: 44,
-					completed_today: true
-				},
-				{
-					id: 'running',
-					name: 'Running',
-					icon: '🏃',
-					current_streak: 3,
-					best_streak: 15,
-					completed_today: false
-				}
-			];
 		} finally {
 			isLoading = false;
 		}
@@ -211,11 +192,16 @@
 				streaks = [...streaks];
 
 				// Call API to revert
-				await fetch(`/api/habits/${habitId}/toggle`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ completed: wasCompleted })
-				});
+				// TODO: Add habits.toggle() method to SDK
+				try {
+					await fetch(`/api/v1/habits/${habitId}/toggle`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ completed: wasCompleted })
+					});
+				} catch (err) {
+					console.error('Failed to revert habit toggle:', err);
+				}
 			},
 			data: {
 				habitId,
@@ -226,8 +212,9 @@
 		});
 
 		// Send to API
+		// TODO: Add habits.toggle() method to SDK - using direct fetch for now
 		try {
-			const response = await fetch(`/api/habits/${habitId}/toggle`, {
+			const response = await fetch(`/api/v1/habits/${habitId}/toggle`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ completed: habit.completed_today })

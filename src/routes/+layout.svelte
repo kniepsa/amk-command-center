@@ -8,7 +8,10 @@
 	import ResumeSessionPrompt from '$lib/components/ResumeSessionPrompt.svelte';
 	import OfflineSyncIndicator from '$lib/components/OfflineSyncIndicator.svelte';
 	import GlobalSearch from '$lib/components/GlobalSearch.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import KeyboardShortcutsModal from '$lib/components/KeyboardShortcutsModal.svelte';
 	import { undoLast, getLastAction } from '$lib/stores/action-history.svelte';
+	import { shortcuts } from '$lib/stores/shortcuts.svelte';
 	import { initAutoSave } from '$lib/utils/auto-save';
 	import { browser } from '$app/environment';
 
@@ -85,8 +88,28 @@
 			<GlobalSearch />
 		</div>
 
-		<!-- Menu placeholder (for future navigation) -->
-		<div class="flex-shrink-0 w-8"></div>
+		<!-- Help button for keyboard shortcuts -->
+		<button
+			onclick={() => shortcuts.open()}
+			class="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+			title="Keyboard shortcuts (⌘K)"
+			aria-label="Show keyboard shortcuts"
+		>
+			<svg
+				class="w-5 h-5"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+				></path>
+			</svg>
+		</button>
 	</div>
 </header>
 
@@ -95,6 +118,12 @@
 
 <!-- Undo toast (global) -->
 <UndoToast />
+
+<!-- Toast notifications (global) -->
+<ToastContainer />
+
+<!-- Keyboard shortcuts modal (global) -->
+<KeyboardShortcutsModal />
 
 <!-- iOS install prompt (only shows on iOS Safari) -->
 <IOSInstallPrompt />

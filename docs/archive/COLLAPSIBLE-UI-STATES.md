@@ -3,6 +3,7 @@
 ## Daily AI Section
 
 ### Expanded (Incomplete)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Daily AI                                │
@@ -21,6 +22,7 @@
 ```
 
 ### Expanded (Complete - with collapse option)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Daily AI                    ✓ Collapse  │
@@ -39,6 +41,7 @@
 ```
 
 ### Collapsed (Complete)
+
 ```
 ╔═════════════════════════════════════════╗
 ║ ✓  Daily AI Complete              Expand→║
@@ -50,6 +53,7 @@
 ## Sales Learning Section
 
 ### Expanded (Active Lesson)
+
 ```
 ┌─────────────────────────────────────────┐
 │ 💼 Sales Learning - Day 15/30           │
@@ -74,6 +78,7 @@
 ```
 
 ### Expanded (Complete - with collapse option)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Sales Learning              ✓ Collapse  │
@@ -89,6 +94,7 @@
 ```
 
 ### Collapsed (Complete)
+
 ```
 ╔═════════════════════════════════════════╗
 ║ ✓  Sales Learning - Day 15 Complete    ║
@@ -99,6 +105,7 @@
 ## Visual Styling
 
 ### Collapsed Card
+
 - **Background**: `#f0f9ff` (light blue)
 - **Border**: `1px dashed #3b82f6` (blue)
 - **Border Radius**: `0.5rem`
@@ -108,11 +115,13 @@
 - **Transition**: `all 0.2s ease`
 
 ### Checkmark Icon
+
 - **Size**: `2xl` (text-2xl)
 - **Color**: Green/Success color
 - **Position**: Left side of text
 
 ### Expand Button
+
 - **Text**: "Expand →"
 - **Color**: `#9ca3af` (cloud-400)
 - **Hover**: Darker shade
@@ -121,6 +130,7 @@
 ## Interaction Flow
 
 ### Auto-Collapse (Daily AI)
+
 1. User fills energy level → no collapse
 2. User adds 1st intention → no collapse
 3. User adds 1st gratitude → **AUTO-COLLAPSE**
@@ -128,6 +138,7 @@
 5. localStorage saves `dailyAIExpanded = false`
 
 ### Auto-Collapse (Learning)
+
 1. User reads lesson content
 2. User clicks "Mark Complete & Continue"
 3. **AUTO-COLLAPSE** immediately
@@ -137,6 +148,7 @@
 5. Next day: new lesson, expanded by default
 
 ### Manual Expand
+
 1. User clicks anywhere on collapsed card
 2. Card smoothly expands to full size
 3. All content visible again
@@ -144,6 +156,7 @@
 5. localStorage saves `[section]Expanded = true`
 
 ### Manual Collapse
+
 1. User clicks "✓ Collapse" button in expanded header
 2. Card smoothly collapses
 3. localStorage saves `[section]Expanded = false`
@@ -151,11 +164,13 @@
 ## Responsive Behavior
 
 ### Desktop (> 768px)
+
 - Full width cards
 - Hover states active
 - Smooth transitions
 
 ### Mobile (< 768px)
+
 - Full width cards (same as desktop)
 - Touch-friendly button sizes (min 44px height)
 - No hover states (tap to expand)

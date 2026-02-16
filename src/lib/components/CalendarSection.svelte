@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { api } from '$lib/api/client';
+	import CalendarDayColumn from './CalendarDayColumn.svelte';
+	import type { Task } from '@amk/command-center-sdk';
 
 	interface CalendarEvent {
 		id: string;
@@ -18,42 +21,185 @@
 	}
 
 	let calendarData = $state<CalendarResponse | null>(null);
+	let weekTasks = $state<Task[]>([]);
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
 	let mounted = $state(false);
+
+	// Week state management
+	let currentWeekStart = $state(getMonday(new Date()));
+
+	// Derived week days array
+	let weekDays = $derived.by(() => {
+		const days = [];
+		for (let i = 0; i < 7; i++) {
+			const date = new Date(currentWeekStart);
+			date.setDate(date.getDate() + i);
+			days.push(date);
+		}
+		return days;
+	});
+
+	/**
+	 * Get Monday of the week for a given date
+	 */
+	function getMonday(date: Date): Date {
+		const d = new Date(date);
+		const day = d.getDay();
+		const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+		d.setDate(diff);
+		d.setHours(0, 0, 0, 0);
+		return d;
+	}
+
+	/**
+	 * Navigate to next week
+	 */
+	function nextWeek() {
+		const next = new Date(currentWeekStart);
+		next.setDate(next.getDate() + 7);
+		currentWeekStart = next;
+	}
+
+	/**
+	 * Navigate to previous week
+	 */
+	function prevWeek() {
+		const prev = new Date(currentWeekStart);
+		prev.setDate(prev.getDate() - 7);
+		currentWeekStart = prev;
+	}
+
+	/**
+	 * Jump to today's week
+	 */
+	function goToToday() {
+		currentWeekStart = getMonday(new Date());
+	}
+
+	/**
+	 * Check if a date is today
+	 */
+	function isToday(date: Date): boolean {
+		const today = new Date();
+		return (
+			date.getDate() === today.getDate() &&
+			date.getMonth() === today.getMonth() &&
+			date.getFullYear() === today.getFullYear()
+		);
+	}
+
+	/**
+	 * Format week range for header
+	 */
+	function formatWeekRange(days: Date[]): string {
+		if (days.length === 0) return '';
+		const start = days[0];
+		const end = days[days.length - 1];
+		const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+		const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		return `${startStr} - ${endStr}`;
+	}
+
+	/**
+	 * Get events for a specific day
+	 */
+	function getEventsForDay(day: Date): CalendarEvent[] {
+		if (!calendarData) return [];
+		// For mock data, show all events on today
+		// TODO: Filter by actual event date when real calendar data available
+		const today = new Date();
+		if (
+			day.getDate() === today.getDate() &&
+			day.getMonth() === today.getMonth() &&
+			day.getFullYear() === today.getFullYear()
+		) {
+			return calendarData.events;
+		}
+		return [];
+	}
+
+	/**
+	 * Get tasks for a specific day
+	 */
+	function getTasksForDay(day: Date): Task[] {
+		return weekTasks.filter((task) => {
+			if (!task.reminderDate) return false;
+			const reminderDate = new Date(task.reminderDate);
+			return (
+				reminderDate.getDate() === day.getDate() &&
+				reminderDate.getMonth() === day.getMonth() &&
+				reminderDate.getFullYear() === day.getFullYear()
+			);
+		});
+	}
+
+	/**
+	 * Handle add task for a specific date
+	 */
+	function handleAddTask(date: Date) {
+		// TODO: Open task modal with pre-filled reminder date
+		console.log('Add task for date:', date.toISOString().split('T')[0]);
+	}
 
 	$effect(() => {
 		if (!browser || mounted) return;
 
 		mounted = true;
-		loadTodaysEvents();
+		loadWeekData();
 
 		// Refresh every 15 minutes
-		const interval = setInterval(loadTodaysEvents, 15 * 60 * 1000);
+		const interval = setInterval(loadWeekData, 15 * 60 * 1000);
 
 		return () => {
 			clearInterval(interval);
 		};
 	});
 
-	async function loadTodaysEvents() {
+	// Reload when week changes
+	$effect(() => {
+		if (!browser || !mounted) return;
+		// This effect runs when currentWeekStart changes
+		void currentWeekStart; // Reference to trigger effect
+		loadWeekData();
+	});
+
+	/**
+	 * Load week data (events and tasks)
+	 */
+	async function loadWeekData() {
 		isLoading = true;
 		error = null;
 
 		try {
-			// Try to fetch from backend API
-			const response = await fetch('/api/calendar/today');
+			// Load events for the week
+			// TODO: Implement calendar.getWeek() in backend
+			// For now, using mock data
+			calendarData = generateMockCalendarData();
 
-			if (response.ok) {
-				calendarData = await response.json();
-			} else {
-				// Mock data for testing (no Google Calendar MCP available)
-				calendarData = generateMockCalendarData();
+			// Load tasks with due dates/reminders in this week
+			try {
+				const tasksResponse = await api.tasks.list({
+					workspace: 'amk',
+					status: 'open'
+				});
+				weekTasks = tasksResponse.tasks.filter((task) => {
+					// Filter tasks with reminder dates in current week
+					if (!task.reminderDate) return false;
+					const reminderDate = new Date(task.reminderDate);
+					const weekEnd = new Date(currentWeekStart);
+					weekEnd.setDate(weekEnd.getDate() + 7);
+					return reminderDate >= currentWeekStart && reminderDate < weekEnd;
+				});
+			} catch (err) {
+				console.error('Error loading tasks:', err);
+				weekTasks = [];
 			}
 		} catch (err) {
-			console.error('Error loading calendar events:', err);
-			// Use mock data on error
+			console.error('Error loading week data:', err);
+			error = err instanceof Error ? err.message : 'Failed to load week data';
 			calendarData = generateMockCalendarData();
+			weekTasks = [];
 		} finally {
 			isLoading = false;
 		}
@@ -109,45 +255,12 @@
 		};
 	}
 
-	/**
-	 * Extract @mentions from event description
-	 */
-	function extractMentions(description?: string): string[] {
-		if (!description) return [];
-		const mentionRegex = /@[\w-]+/g;
-		return description.match(mentionRegex) || [];
-	}
-
-	/**
-	 * Format time for display (convert 24h to 12h)
-	 */
-	function formatTime(time: string): string {
-		const [hours, minutes] = time.split(':');
-		const h = parseInt(hours);
-		const m = minutes;
-		const period = h >= 12 ? 'PM' : 'AM';
-		const displayHour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-		return `${displayHour}:${m} ${period}`;
-	}
-
-	/**
-	 * Get all unique mentions from events
-	 */
-	let allMentions = $derived.by(() => {
-		if (!calendarData?.events) return [];
-		const mentions = new Set<string>();
-		calendarData.events.forEach(event => {
-			const extracted = extractMentions(event.description);
-			extracted.forEach(m => mentions.add(m));
-		});
-		return Array.from(mentions);
-	});
 </script>
 
 <div class="space-y-4">
 	{#if isLoading && !calendarData}
 		<div class="bg-white rounded-lg border border-cloud-200 p-8">
-			<p class="text-cloud-400 text-center">Loading today's calendar...</p>
+			<p class="text-cloud-400 text-center">Loading week calendar...</p>
 		</div>
 	{:else if error}
 		<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -158,7 +271,7 @@
 					<p class="text-cloud-500 text-sm mt-2">{error}</p>
 					<p class="text-cloud-500 text-xs mt-3">Note: Google Calendar MCP not configured. Using mock data.</p>
 					<button
-						onclick={loadTodaysEvents}
+						onclick={loadWeekData}
 						class="mt-4 px-4 py-2 bg-cloud-400 hover:bg-cloud-500 text-white rounded-lg transition-colors text-sm font-medium"
 					>
 						Retry
@@ -166,105 +279,76 @@
 				</div>
 			</div>
 		</div>
-	{:else if calendarData && calendarData.events.length > 0}
+	{:else if calendarData}
 		<div class="bg-white rounded-lg border border-cloud-200 p-6">
-			<div class="flex items-center justify-between mb-4">
+			<!-- Week Header with Navigation -->
+			<div class="flex items-center justify-between mb-6">
 				<h3 class="text-base font-medium text-cloud-600">
-					📅 Today's Calendar ({calendarData.events.length})
+					📅 Week of {formatWeekRange(weekDays)}
 				</h3>
-				<span class="text-xs text-cloud-400">{calendarData.date}</span>
+				<div class="flex gap-2">
+					<button
+						onclick={prevWeek}
+						class="px-3 py-1 border border-cloud-200 rounded hover:bg-cloud-50 transition-colors text-sm text-cloud-600"
+						title="Previous week"
+					>
+						← Prev
+					</button>
+					<button
+						onclick={goToToday}
+						class="px-3 py-1 border border-electric-200 bg-electric-50 text-electric-600 rounded hover:bg-electric-100 transition-colors text-sm font-medium"
+						title="Jump to current week"
+					>
+						Today
+					</button>
+					<button
+						onclick={nextWeek}
+						class="px-3 py-1 border border-cloud-200 rounded hover:bg-cloud-50 transition-colors text-sm text-cloud-600"
+						title="Next week"
+					>
+						Next →
+					</button>
+				</div>
 			</div>
 
-			<div class="space-y-3">
-				{#each calendarData.events as event}
-					<div class="flex items-start gap-4 p-4 bg-cloud-50 rounded-lg hover:bg-cloud-100 transition-colors">
-						<!-- Time badge -->
-						<div class="flex-shrink-0 w-16 text-center">
-							<div class="text-sm font-semibold text-electric-600">{formatTime(event.start)}</div>
-							<div class="text-xs text-cloud-400 mt-0.5">{formatTime(event.end)}</div>
-						</div>
-
-						<!-- Event content -->
-						<div class="flex-1 min-w-0">
-							<h4 class="text-sm font-medium text-cloud-800">{event.summary}</h4>
-
-							<!-- Attendees -->
-							{#if event.attendees && event.attendees.length > 0}
-								<div class="flex items-center gap-2 mt-2">
-									<span class="text-xs text-cloud-500">with</span>
-									<div class="flex flex-wrap gap-1">
-										{#each event.attendees as attendee}
-											<span class="text-xs px-2 py-1 bg-electric-50 text-electric-700 rounded border border-electric-200">
-												{attendee}
-											</span>
-										{/each}
-									</div>
-								</div>
-							{/if}
-
-							<!-- Mentions from description -->
-							{#if event.mentions && event.mentions.length > 0}
-								<div class="flex items-center gap-1 mt-2">
-									{#each event.mentions as mention}
-										<a
-											href="#"
-											class="text-xs text-electric-600 hover:text-electric-700 hover:underline"
-											onclick={(e) => {
-												e.preventDefault();
-												// Could navigate to person CRM page
-											}}
-										>
-											{mention}
-										</a>
-									{/each}
-								</div>
-							{/if}
-						</div>
-
-						<!-- Duration indicator -->
-						<div class="flex-shrink-0 text-right">
-							<span class="inline-block text-xs text-cloud-400 px-2 py-1 bg-cloud-100 rounded">
-								{(() => {
-									const [startH, startM] = event.start.split(':').map(Number);
-									const [endH, endM] = event.end.split(':').map(Number);
-									const duration = endH * 60 + endM - (startH * 60 + startM);
-									return `${Math.floor(duration / 60)}h ${duration % 60}m`;
-								})()}
-							</span>
-						</div>
-					</div>
+			<!-- Week Grid (7 columns) -->
+			<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3 week-grid">
+				{#each weekDays as day}
+					<CalendarDayColumn
+						date={day}
+						events={getEventsForDay(day)}
+						tasks={getTasksForDay(day)}
+						isToday={isToday(day)}
+						onAddTask={handleAddTask}
+					/>
 				{/each}
 			</div>
-
-			<!-- Summary of people -->
-			{#if allMentions.length > 0}
-				<div class="mt-4 pt-4 border-t border-cloud-200">
-					<p class="text-xs text-cloud-500 mb-2">People to connect with today:</p>
-					<div class="flex flex-wrap gap-2">
-						{#each allMentions as mention}
-							<a
-								href="#"
-								class="text-xs text-electric-600 hover:text-electric-700 font-medium hover:underline"
-								onclick={(e) => {
-									e.preventDefault();
-									// Navigate to person CRM
-								}}
-							>
-								{mention}
-							</a>
-						{/each}
-					</div>
-				</div>
-			{/if}
-		</div>
-	{:else if calendarData && calendarData.events.length === 0}
-		<div class="bg-white border border-cloud-200 rounded-lg p-8 text-center">
-			<p class="text-cloud-600 font-medium">No events today 🎉</p>
-			<p class="text-cloud-400 text-sm mt-2">Your calendar is clear - enjoy your day!</p>
 		</div>
 	{/if}
 </div>
 
 <style>
-	/* Additional styles if needed */
+	/* Mobile responsive: Show 3 columns at a time on small screens */
+	@media (max-width: 768px) {
+		.week-grid {
+			grid-auto-flow: column;
+			overflow-x: auto;
+			scroll-snap-type: x mandatory;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.week-grid > :global(*) {
+			scroll-snap-align: start;
+			min-width: calc(33.333% - 0.5rem);
+		}
+	}
+
+	/* Hide scrollbar but keep functionality */
+	.week-grid::-webkit-scrollbar {
+		display: none;
+	}
+	.week-grid {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
 </style>

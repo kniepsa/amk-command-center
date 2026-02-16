@@ -21,29 +21,47 @@ const COMPLETION_MESSAGES: RewardMessage[] = [
   { content: "Powerful priorities. You know what matters.", emoji: "💪" },
   { content: "That's the energy! Let's build on this.", emoji: "⚡" },
   { content: "Strong start. You're setting the tone.", emoji: "🚀" },
-  { content: "Intentional and clear. Exactly right.", emoji: "🎨" }
+  { content: "Intentional and clear. Exactly right.", emoji: "🎨" },
 ];
 
 /**
  * Milestone celebrations (override random selection)
  */
 const MILESTONE_REWARDS: Record<number, RewardMessage> = {
-  7: { content: "🎉 7-DAY STREAK! You're building a real habit here.", emoji: "🏆" },
-  14: { content: "🔥 TWO WEEKS! Most people quit by now. Not you.", emoji: "💎" },
+  7: {
+    content: "🎉 7-DAY STREAK! You're building a real habit here.",
+    emoji: "🏆",
+  },
+  14: {
+    content: "🔥 TWO WEEKS! Most people quit by now. Not you.",
+    emoji: "💎",
+  },
   30: { content: "⭐ 30 DAYS! You've transformed your mornings.", emoji: "👑" },
   50: { content: "🚀 50 DAYS! This is legendary consistency.", emoji: "🦅" },
   100: { content: "💯 CENTURY CLUB! You're in the top 1% now.", emoji: "🏅" },
-  365: { content: "🎊 ONE FULL YEAR! Habits don't get stronger than this.", emoji: "🌟" }
+  365: {
+    content: "🎊 ONE FULL YEAR! Habits don't get stronger than this.",
+    emoji: "🌟",
+  },
 };
 
 /**
  * Encouragement for broken streaks ("Never miss twice" - James Clear)
  */
 const RECOVERY_MESSAGES: RewardMessage[] = [
-  { content: "You had a 44-day streak. One miss doesn't erase that. Let's go.", emoji: "💪" },
-  { content: "Missing once is life. Missing twice is a choice. You're back.", emoji: "🔄" },
+  {
+    content: "You had a 44-day streak. One miss doesn't erase that. Let's go.",
+    emoji: "💪",
+  },
+  {
+    content: "Missing once is life. Missing twice is a choice. You're back.",
+    emoji: "🔄",
+  },
   { content: "The comeback is always stronger than the setback.", emoji: "⚡" },
-  { content: "Champions don't quit after one miss. Restart mode: ON.", emoji: "🎯" }
+  {
+    content: "Champions don't quit after one miss. Restart mode: ON.",
+    emoji: "🎯",
+  },
 ];
 
 /**
@@ -60,7 +78,7 @@ const RECOVERY_MESSAGES: RewardMessage[] = [
  */
 export function getRewardMessage(
   currentStreak: number = 1,
-  previousStreak: number = 0
+  previousStreak: number = 0,
 ): RewardMessage {
   // Check for milestone
   if (MILESTONE_REWARDS[currentStreak]) {
@@ -81,14 +99,19 @@ export function getRewardMessage(
 /**
  * Get next milestone and days until it
  */
-export function getNextMilestone(currentStreak: number): { days: number; milestone: number } {
-  const milestones = Object.keys(MILESTONE_REWARDS).map(Number).sort((a, b) => a - b);
+export function getNextMilestone(currentStreak: number): {
+  days: number;
+  milestone: number;
+} {
+  const milestones = Object.keys(MILESTONE_REWARDS)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   for (const milestone of milestones) {
     if (currentStreak < milestone) {
       return {
         days: milestone - currentStreak,
-        milestone
+        milestone,
       };
     }
   }
@@ -97,6 +120,6 @@ export function getNextMilestone(currentStreak: number): { days: number; milesto
   const nextCentury = Math.ceil(currentStreak / 100) * 100;
   return {
     days: nextCentury - currentStreak,
-    milestone: nextCentury
+    milestone: nextCentury,
   };
 }
