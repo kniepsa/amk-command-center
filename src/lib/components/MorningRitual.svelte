@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { toast } from '$lib/stores/toast.svelte';
+	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 
 	type Props = {
 		onComplete: (data: { grateful: string; excited: string; priorities: string[] }) => void;
@@ -15,6 +17,45 @@
 	let priority1 = $state('');
 	let priority2 = $state('');
 	let priority3 = $state('');
+
+	// Restore from localStorage on mount
+	onMount(() => {
+		if (!browser) return;
+
+		const today = new Date().toISOString().split('T')[0];
+		const stored = localStorage.getItem(`morning-ritual-${today}`);
+
+		if (stored) {
+			try {
+				const data = JSON.parse(stored);
+				grateful = data.grateful || '';
+				excited = data.excited || '';
+				priority1 = data.priority1 || '';
+				priority2 = data.priority2 || '';
+				priority3 = data.priority3 || '';
+				quickMode = data.quickMode ?? true;
+			} catch (e) {
+				console.error('Failed to restore morning ritual data:', e);
+			}
+		}
+	});
+
+	// Auto-save to localStorage when typing
+	$effect(() => {
+		if (!browser) return;
+
+		const today = new Date().toISOString().split('T')[0];
+		const data = {
+			grateful,
+			excited,
+			priority1,
+			priority2,
+			priority3,
+			quickMode
+		};
+
+		localStorage.setItem(`morning-ritual-${today}`, JSON.stringify(data));
+	});
 
 	// Quick Start: Just 1 gratitude + 1 priority (James Clear 2-Minute Rule)
 	let canStartQuick = $derived(grateful.trim() && priority1.trim());
@@ -38,6 +79,12 @@
 		};
 
 		onComplete(data);
+
+		// Clear localStorage after successful completion
+		if (browser) {
+			const today = new Date().toISOString().split('T')[0];
+			localStorage.removeItem(`morning-ritual-${today}`);
+		}
 
 		// Success feedback
 		const priorityText = quickMode ? priority1.trim() : `${data.priorities.length} priorities`;

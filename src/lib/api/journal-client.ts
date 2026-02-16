@@ -375,7 +375,7 @@ export async function updateCoachConfig(
  */
 export async function getDailyCoaches(): Promise<DailyCoach[]> {
   try {
-    const response = await fetch(`${JOURNAL_API_URL}/api/v1/coaches/daily`, {
+    const response = await fetch(`${JOURNAL_API_URL}/coaches/daily`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${API_KEY}`,

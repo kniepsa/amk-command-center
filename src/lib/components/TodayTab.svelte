@@ -15,7 +15,21 @@
 		if (!browser || mounted) return;
 
 		mounted = true;
+
+		// Restore morning ritual completion status
+		const today = new Date().toISOString().split('T')[0];
+		const completed = localStorage.getItem(`morning-ritual-complete-${today}`);
+		morningRitualComplete = completed === 'true';
+
 		loadCurrentEnergy();
+	});
+
+	// Persist morning ritual completion status
+	$effect(() => {
+		if (!browser) return;
+
+		const today = new Date().toISOString().split('T')[0];
+		localStorage.setItem(`morning-ritual-complete-${today}`, String(morningRitualComplete));
 	});
 
 	async function loadCurrentEnergy() {

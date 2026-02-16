@@ -23,7 +23,7 @@
 		isLoading = true;
 
 		try {
-			const result = await api.tasks.getAll();
+			const result = await api.tasks.list();
 			tasks = result.tasks || [];
 		} catch (error) {
 			console.error('Error loading tasks:', error);
